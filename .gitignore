@@ -1,0 +1,66 @@
+# ---- CLion / IntelliJ IDEA 配置 ----
+.idea/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.cbp
+*.workspace
+*.iml
+
+# ---- 可执行文件 / 编译产物 ----
+*.exe
+*.dll
+*.lib
+*.a
+*.obj
+*.o
+*.pdb
+*.exp
+*.ilk
+*.manifest
+
+# ---- 日志与调试文件 ----
+*.log
+*.tmp
+*.bak
+*.swp
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- EasyX 临时资源 ----
+output/
+resource/
+EasyX_Test/Debug/
+EasyX_Test/Release/
+
+# ---- VS 或其他IDE生成的文件（防止混用）----
+.vs/
+*.sln
+*.vcxproj*
+Debug/
+Release/
+
+# ---- 编译时生成的中间文件 ----
+*.pch
+*.idb
+*.tlog
+
+# ---- 备份与缓存 ----
+*.old
+*.orig
+*.cache
+
+# ---- CTest / CLion 运行输出 ----
+Testing/
+CTestTestfile.cmake
+CMakeScripts/
+Makefile
+compile_commands.json
+
+# ---- 个人开发配置文件（可选忽略）----
+*.user
+*.code-workspace
+*.idea_modules/
