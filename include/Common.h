@@ -5,7 +5,9 @@
 // 状态 1: 当前显示哪个全屏 (GameController 拥有)
 enum class ActiveScreen {
     VIEW_MAP,       // 显示全屏地图
-    VIEW_PANEL      // 显示全屏玩家面板
+    VIEW_PLAYER_PANEL,  // 显示全屏玩家面板
+    VIEW_BANK_PANEL,
+    VIEW_DEV_CARD_PANEL,
 };
 
 // 状态 2: 当前正在执行什么动作 (GameController 拥有)
@@ -21,7 +23,7 @@ enum class GameState {
 
 // GameController 会询问这个枚举
 // 来知道是哪个按钮被点击了
-enum class ButtonType {
+enum class ButtonTypeFromPanel {
     NONE,
     BUILD_ROAD,
     BUILD_SETTLEMENT,
@@ -29,9 +31,12 @@ enum class ButtonType {
     BUY_DEV_CARD,
     USE_DEV_CARD,
     TRADE_BANK,
+    DISCARD_CARD,
+    ROLL_DICE,
     END_TURN,
-    CANCEL_ACTION,
-    SWITCH_TO_MAP
+    SWITCH_TO_MAP,
+    //用于从银行，发展卡等界面返回个人界面
+    CANCEL
 };
 
 // 定义资源类型
