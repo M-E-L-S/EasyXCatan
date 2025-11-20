@@ -31,7 +31,6 @@ enum class ButtonTypeFromPanel {
     BUY_DEV_CARD,
     USE_DEV_CARD,
     TRADE_BANK,
-    DISCARD_CARD,
     ROLL_DICE,
     END_TURN,
     SWITCH_TO_MAP,
