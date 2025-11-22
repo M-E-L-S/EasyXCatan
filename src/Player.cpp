@@ -1,4 +1,5 @@
 #include "Player.h"
+#include <Windows.h>
 
 // --- 构造函数 ---
 Player::Player(int id, COLORREF playerColor) :
@@ -6,7 +7,6 @@ Player::Player(int id, COLORREF playerColor) :
     //    在这里初始化简单的变量
     playerID(id),
     color(playerColor),
-
 
     // 状态
     usedKnightNumber(0),
@@ -90,7 +90,7 @@ int Player::getKnightCount() const
 }
 
 COLORREF Player::getColor() const {
-     return color;
+    return color;
 }
 int Player::getID() const {
     return playerID;
@@ -102,21 +102,21 @@ bool Player::canAffordBuilding(BuildingType type) const
 {
     switch (type)
     {
-        case ROAD:
-            // 路：1 木 + 1 磚
-            return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1);
+    case ROAD:
+        // 路：1 木 + 1 磚
+        return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1);
 
-        case SETTLEMENT:
-            // 村莊：1 木 + 1 磚 + 1 羊 + 1 麥
-            return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1 &&
-                    resourceNumber[SHEEP] >= 1 && resourceNumber[WHEAT] >= 1);
+    case SETTLEMENT:
+        // 村莊：1 木 + 1 磚 + 1 羊 + 1 麥
+        return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1 &&
+            resourceNumber[SHEEP] >= 1 && resourceNumber[WHEAT] >= 1);
 
-        case CITY:
-            // !! 關鍵邏輯 !!
-            // 城市：3 礦 + 2 麥
-            // 需要地图端确认选择的地方是否有村庄
-            return (resourceNumber[ORE] >= 3 && resourceNumber[WHEAT] >= 2 &&
-                    buildingNumber[SETTLEMENT] > 0);
+    case CITY:
+        // !! 關鍵邏輯 !!
+        // 城市：3 礦 + 2 麥
+        // 需要地图端确认选择的地方是否有村庄
+        return (resourceNumber[ORE] >= 3 && resourceNumber[WHEAT] >= 2 &&
+            buildingNumber[SETTLEMENT] > 0);
     }
 
     // 如果傳入無效的類型
@@ -129,7 +129,7 @@ bool Player::canAffordDevCard() const
 }
 bool Player::hasDevCard(DevCardType type) const {
     if (type >= 0 && type < DEV_CARD_COUNT)
-        return devCardNumber[type]!=0;
+        return devCardNumber[type] != 0;
     return false;
 }
 
@@ -200,4 +200,14 @@ void Player::setHasLargestArmy(bool hasIt)
 void Player::setHasLongestRoad(bool hasIt)
 {
     this->hasLongestRoad = hasIt;
+}
+
+// 增加已使用骑士卡数量
+void Player::addUsedKnight() {
+    usedKnightNumber++;
+}
+
+// 查询是否拥有最大骑士数
+bool Player::getHasLargestArmy() const {
+    return hasLargestArmy;
 }
