@@ -33,6 +33,7 @@ extern bool Map_HandleBuildRequest(BuildType type, int playerId, int mouseX, int
 // 长路特判(ID)
 extern int Map_CheckLongestRoad();
 // 强盗移动(ID List)
+extern void Map_MoveRobber();
 extern vector<int> Map_MoveRobber(int mouseX, int mouseY);
 
 // ----- 用户组 -----
@@ -51,8 +52,6 @@ extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
 extern void Resources_DoDiscard(int playerId);
 extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
-// 抢劫
-extern ResourceType Resources_HandleRobbery(int mouseX, int mouseY);
 
 // ----- 交易组 -----
 extern void Trade_Draw();
