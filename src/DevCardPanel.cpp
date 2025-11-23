@@ -111,7 +111,7 @@ void DevCardPanel::draw(const DevCardManager& manager, const Player& player)
     if (!visible) return;
 
     for (auto& d : cardDisplays)
-        drawCard(d,manager,player);
+        drawCard(d, manager, player);
 
     if (selectedCardType != (DevCardType)-1) {
         int X = panelX + 625;

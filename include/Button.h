@@ -1,51 +1,43 @@
 // Button.h
-#pragma once
-#define GRAY RGB(128, 128, 128)
 #include <graphics.h>
 #include <string>
 
+// 一个简单的可复用按钮结构体
 struct Button {
-    int x, y, w, h;
-    std::string text;
-    COLORREF color;
-    bool enabled;
+    int x, y, w, h;     // 位置和宽高
+    std::string text;   // 按钮上的文字
+    COLORREF color;     // 按钮颜色
+    bool enabled;       // 按钮是否可点击 (用于 "灰显")
+
+    Button() 
+        :x(0), y(0), w(0), h(0), text(""), color(RGB(0, 0, 0)), enabled(false)
+    {}
 
     Button(int x, int y, int w, int h, const std::string& text, COLORREF color) :
-        x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {}
+        x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {
+    }
 
     // 绘制按钮
     void draw() const {
-        // 根据是否启用，选择不同的填充色
-        if (enabled) {
-            setfillcolor(color);
-        } else {
-            setfillcolor(GRAY); // 灰显
-        }
+        // 设置填充色 (根据是否启用)
+        setfillcolor(enabled ? color : RGB(128, 128, 128));
         solidrectangle(x, y, x + w, y + h);
 
         // 绘制边框
-        setlinecolor(GRAY);
+        setlinecolor(RGB(128, 128, 128));
         rectangle(x, y, x + w, y + h);
 
         // 绘制文字 (居中)
-        if (enabled) {
-            settextcolor(BLACK);
-        } else {
-            settextcolor(DARKGRAY); // 灰显文字
-        }
+        settextcolor(enabled ? BLACK : DARKGRAY);
         setbkmode(TRANSPARENT);
+        int textW = textwidth((LPCTSTR)text.c_str());
+        int textH = textheight((LPCTSTR)text.c_str());
+        outtextxy(x + (w - textW) / 2, y + (h - textH) / 2, (LPCTSTR)text.c_str());
 
-        // EasyX 的 C-style 字符串处理
-        const char* btnText = text.c_str();
-        int textW = textwidth(btnText);
-        int textH = textheight(btnText);
-        outtextxy(x + (w - textW) / 2, y + (h - textH) / 2, btnText);
     }
 
     // 检查是否被点击 (必须是启用的)
     bool isClicked(int mouseX, int mouseY) const {
-        return enabled &&
-               (mouseX >= x && mouseX <= x + w &&
-                mouseY >= y && mouseY <= y + h);
+        return enabled && (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
     }
 };

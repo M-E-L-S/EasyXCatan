@@ -3,7 +3,8 @@
 DevCardManager::DevCardManager(std::vector<Player*>& players)
     : players(players),
     justBought(players.size())
-{}
+{
+}
 
 // ================ 基础功能 ================
 
@@ -12,7 +13,7 @@ void DevCardManager::AddCard(int playerID, DevCardType card) {
     justBought[playerID].push_back(card);
 }
 
-bool DevCardManager::CanPlayCard(int playerID, DevCardType card) {
+bool DevCardManager::CanPlayCard(int playerID, DevCardType card)const{
     // 本回合买的不能用
     for (auto c : justBought[playerID])
         if (c == card) return false;
@@ -31,6 +32,17 @@ void DevCardManager::EndTurn() {
     for (auto& v : justBought)
         v.clear();
 }
+
+int DevCardManager::getNewThisTurn(int playerID, DevCardType card) const {
+    if (playerID < 0 || playerID >= justBought.size()) return 0;
+
+    int count = 0;
+    for (auto& c : justBought[playerID]) {
+        if (c == card) count++;
+    }
+    return count;
+}
+
 
 // ================ 卡牌效果 ================
 
@@ -67,7 +79,7 @@ bool DevCardManager::UseKnight(Player& player, std::vector<Player>& allPlayers) 
 
 
 ResourceType DevCardManager::Monopoly(int playerID, ResourceType type,
-                                    std::vector<Player*>& allPlayers) 
+    std::vector<Player*>& allPlayers)
 {
     int total = 0;
     for (size_t i = 0; i < allPlayers.size(); i++) {
