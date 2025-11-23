@@ -23,9 +23,9 @@ extern void Map_Init(int seed);
 // 地图绘制
 extern void Map_Draw();
 // 玩家交易属性（0元购, 4:1, 3:1, 2:1……）
-extern std::vector<bool> Map_GetTradeOption(int playerId);
+extern vector<bool> Map_GetTradeOption(int playerId);
 // 资源产出(ID, type, amount)
-extern std::vector<tuple<int, ResourceType, int>> Map_ProduceResources(int diceRoll);
+extern vector<vector<pair<ResourceType, int>>> Map_ProduceResources(int diceRoll);
 extern vector<pair<ResourceType, int>> Map_PreResources(int playerId);
 // 玩家建设
 extern bool Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
