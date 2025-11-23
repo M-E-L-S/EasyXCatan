@@ -2,6 +2,9 @@
 
 #pragma once
 
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
+
 // 状态 1: 当前显示哪个全屏 (GameController 拥有)
 enum class ActiveScreen {
     VIEW_MAP,       // 显示全屏地图
@@ -13,11 +16,11 @@ enum class ActiveScreen {
 // 状态 2: 当前正在执行什么动作 (GameController 拥有)
 enum class GameState {
     IDLE,             // 默认状态，等待玩家操作
+    END_TURN,
     AWAITING_MAP_CLICK_FOR_ROAD,
     AWAITING_MAP_CLICK_FOR_SETTLEMENT,
     AWAITING_MAP_CLICK_FOR_CITY,
-    AWAITING_MAP_CLICK_FOR_THIEF,
-    AWAITING_MAP_CLICK_FOR_KNIGHT,
+    AWAITING_SWITCH_TO_MAP
     // ... 其他状态
 };
 
@@ -34,8 +37,6 @@ enum class ButtonTypeFromPanel {
     ROLL_DICE,
     END_TURN,
     SWITCH_TO_MAP,
-    //用于从银行，发展卡等界面返回个人界面
-    CANCEL
 };
 
 // 定义资源类型

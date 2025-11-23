@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include "Windows.h"
 
 // ----------- Player 类的定义 -----------
 class Player{

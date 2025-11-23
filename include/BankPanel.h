@@ -1,8 +1,0 @@
-//
-// Created by VICTUS on 2025/11/17.
-//
-
-#ifndef EASYX_PROJECT_BANKPANEL_H
-#define EASYX_PROJECT_BANKPANEL_H
-
-#endif //EASYX_PROJECT_BANKPANEL_H

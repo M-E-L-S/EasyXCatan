@@ -51,18 +51,6 @@ private:
     IMAGE resourceImages[RESOURCE_COUNT];
     bool hasImagesLoaded; // 标记是否已加载图片
     // 准备好图片的路径 (确保图片在项目目录下)
-    // 在 main.cpp 或 GameController 初始化 PlayerPanel 的地方，调用下面的代码：
-    /*const char* resPaths[RESOURCE_COUNT] = {
-        "./assets/wood.jpg",
-        "./assets/brick.jpg",
-        "./assets/sheep.jpg",
-        "./assets/wheat.jpg",
-        "./assets/ore.jpg"
-    };
-    PlayerPanel myPanel(1024, 768);
-    myPanel.loadResourceImages(resPaths); // 这一步会自动加载并缩放图片
-
-    如果没有调用这个函数，或者图片路径不对，程序会默认显示带颜色的色块，不会崩溃。*/
 
     // --- UI 控件 ---
     // 我们把所有按钮都存在一个 vector 里
