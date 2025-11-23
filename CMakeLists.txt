@@ -7,6 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(EasyX_Project src/main.cpp
         include/BankPanel.h
-        src/BankPanel.cpp)
+        src/BankPanel.cpp
+        include/BankLoop.h)
 
 target_link_libraries(EasyX_Project libeasyx.a)
