@@ -40,7 +40,7 @@ extern vector<int> Map_MoveRobber(int mouseX, int mouseY);
 extern void Users_RegisterPlayer(const string &name, int id);
 extern void Users_Draw(int playerId);
 // 资源管理
-extern void Resources_Dec(int playerId, BuildType type, int amount);
+extern void Resources_Dec(int playerId, ResourceType type, int amount);
 extern void Resources_Add(int playerId, vector<pair<ResourceType, int>>);
 // 打出发展卡
 extern DevCardType Users_PlayDevCardUI(int playerId);
