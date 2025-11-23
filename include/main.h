@@ -28,7 +28,7 @@ extern vector<bool> Map_GetTradeOption(int playerId);
 extern vector<vector<pair<ResourceType, int>>> Map_ProduceResources(int diceRoll);
 extern vector<pair<ResourceType, int>> Map_PreResources(int playerId);
 // 玩家建设
-extern bool Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
+extern void Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
 extern bool Map_HandleBuildRequest(BuildType type, int playerId, int mouseX, int mouseY, bool isPre = false);
 // 长路特判(ID)
 extern int Map_CheckLongestRoad();
@@ -49,6 +49,7 @@ extern bool Score_CheckVictory(int playerId, int LongestRoadScore);
 // 资源卡数量检测（amount）
 extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
+extern void Resources_DoDiscard(int playerId);
 extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
 // 抢劫
 extern ResourceType Resources_HandleRobbery(int mouseX, int mouseY);
