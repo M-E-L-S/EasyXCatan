@@ -15,7 +15,7 @@ const int RES_GAP = 20;    // 资源之间的间距
 
 
 // 第2栏: 核心动作
-const int COL2_X = 720;
+const int COL2_X = 630;
 const int BUILD_Y = 150;   // 建造按钮起始Y
 const int TRADE_Y = 400;   // 交易/卡牌按钮起始Y
 
@@ -26,8 +26,8 @@ const int DEV_Y = 300;     // 发展卡文字
 const int FLOW_Y = 600;    // 流程按钮起始Y
 
 // 按钮大小
-const int BTN_W = 200;
-const int BTN_H = 50;
+const int BTN_W = 300;
+const int BTN_H = 70;
 const int BTN_GAP = 10;    // 按钮垂直间距
 
 PlayerPanel::PlayerPanel(int screenWidth, int screenHeight)
@@ -39,39 +39,39 @@ PlayerPanel::PlayerPanel(int screenWidth, int screenHeight)
     // --- 第2栏: 建造按钮组 ---
     int currentY = BUILD_Y;
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Road", YELLOW));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Road", RGB(111,94,86)));
     buttonMap[ButtonTypeFromPanel::BUILD_ROAD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Settlement", YELLOW));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Settlement", RGB(111, 94, 86)));
     buttonMap[ButtonTypeFromPanel::BUILD_SETTLEMENT] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build City", YELLOW));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build City", RGB(111, 94, 86)));
     buttonMap[ButtonTypeFromPanel::BUILD_CITY] = &buttons.back();
 
     // --- 第2栏: 购买/交易按钮组 ---
     currentY = TRADE_Y;
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Buy Dev Card", GREEN));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Buy Dev Card", RGB(38,111,64)) );
     buttonMap[ButtonTypeFromPanel::BUY_DEV_CARD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Use Dev Card", GREEN));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Use Dev Card", RGB(38, 111, 64)));
     buttonMap[ButtonTypeFromPanel::USE_DEV_CARD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Trade (Bank 4:1)", GREEN));
+    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Trade (Bank 4:1)", RGB(38, 111, 64)));
     buttonMap[ButtonTypeFromPanel::TRADE_BANK] = &buttons.back();
 
     // --- 第3栏: 游戏流程按钮 ---
     currentY = FLOW_Y;
 
-    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Switch To Map", BLUE));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Switch To Map", RGB(22,81,136)));
     buttonMap[ButtonTypeFromPanel::SWITCH_TO_MAP] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "END TURN", RED));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "END TURN", RGB(194,37,37)));
     buttonMap[ButtonTypeFromPanel::END_TURN] = &buttons.back();
 }
 
@@ -89,7 +89,7 @@ void PlayerPanel::loadResourceImages(const char* filePaths[RESOURCE_COUNT]) {
 // --- 绘制主函数 ---
 void PlayerPanel::draw(const Player& player, GameState state, int lastDiceResult) {
     // [修复] 使用 RGB 而不是 EGERGB
-    setfillcolor(RGB(240, 248, 255)); // Alice Blue
+    setfillcolor(RGB(195,171,140)); // Alice Blue
     solidrectangle(0, 0, width, height);
 
     // 2. 绘制各栏内容
