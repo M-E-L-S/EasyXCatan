@@ -5,6 +5,7 @@
 #include "Common.h"
 #include "TextWindow.h"
 #include "Random.h"
+#include "DevCardLoop.h"
 
 // 声明你已经写好的外部循环函数
 // 必须传入非 const 引用，因为交易和买卡会修改玩家数据
@@ -107,8 +108,7 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                     break;
                 case ButtonTypeFromPanel::USE_DEV_CARD:
                     EndBatchDraw();
-                    textWindow("Here is devCardPanel.");
-                    //devcardloop(player);
+                        DevCardLoop(player);
                     BeginBatchDraw();
                     break;
 

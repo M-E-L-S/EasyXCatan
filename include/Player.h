@@ -19,6 +19,7 @@ public: // 外部可以访问的
     int getBuildingCount(BuildingType type) const; // 获取特定建筑的数量
     int getDevCardCount(DevCardType type) const; // 获取特定发展卡的数量
     int getKnightCount() const;       // 获取已使用的骑士卡数量
+    bool getHasLargestArmy() const;
 
     COLORREF getColor() const; // 获取玩家的颜色
     int getID() const;         // 获取玩家的 ID (0 或 1)
@@ -32,6 +33,7 @@ public: // 外部可以访问的
     // 这些函数会修改私有数据
     void addResource(ResourceType type, int amount);
     void removeResource(ResourceType type, int amount);
+   void addUsedKnight();
 
     // !!注意：这些函数只修改玩家数据不扣除相应的资源
     void addDevCard(DevCardType type);

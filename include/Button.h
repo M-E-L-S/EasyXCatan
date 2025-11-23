@@ -1,4 +1,5 @@
 // Button.h
+#pragma once
 #include <graphics.h>
 #include <string>
 
@@ -9,6 +10,9 @@ struct Button {
     COLORREF color;     // 按钮颜色
     bool enabled;       // 按钮是否可点击 (用于 "灰显")
 
+    Button()
+        :x(0), y(0), w(0), h(0), text(""), color(RGB(0, 0, 0)), enabled(false) {}
+
     Button(int x, int y, int w, int h, const std::string& text, COLORREF color) :
         x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {}
 
@@ -16,10 +20,10 @@ struct Button {
     void draw() const {
 
         // 定义圆角半径
-        const int CORNER_RADIUS = 25;
+        const int CORNER_RADIUS = 30;
 
         // 设置填充色 (根据是否启用)
-        setfillcolor(enabled ? color : RGB(128,128,128));
+        setfillcolor(enabled ? color : RGB(128, 128, 128));
         // 使用 fillroundrect 绘制填充的圆角矩形
         fillroundrect(x, y, x + w, y + h, CORNER_RADIUS, CORNER_RADIUS);
 

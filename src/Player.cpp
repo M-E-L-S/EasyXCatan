@@ -201,3 +201,13 @@ void Player::setHasLongestRoad(bool hasIt)
 {
     this->hasLongestRoad = hasIt;
 }
+
+// 增加已使用骑士卡数量
+void Player::addUsedKnight() {
+    usedKnightNumber++;
+}
+
+// 查询是否拥有最大骑士数
+bool Player::getHasLargestArmy() const {
+    return hasLargestArmy;
+}
