@@ -3,29 +3,43 @@
 #include "BankPanel.h"
 #include "Player.h"
 
-// 为了方便，我们将银行逻辑封装为一个内联函数
-// 在实际大项目中，通常会放入 .cpp 文件，但在测试结构中 inline 很方便
+// 银行模块的入口函数
+// 传入当前玩家引用，以便修改资源
 inline void EnterBankMode(Player& currentPlayer) {
-    // 1. 获取当前窗口大小
-    int w = getwidth();
-    int h = getheight();
+    // 1. 获取当前窗口大小 (适配全屏)
+    int w = 1600;
+    int h = 1080;
 
     // 2. 创建银行实例
     BankPanel bank(w, h);
 
-    // 3. 加载资源 (硬编码路径，确保 assets 文件夹存在)
+    // 3. 加载资源 (确保 assets 文件夹在 exe 同级目录)
     const char* iconPaths[RESOURCE_COUNT] = {
-        "assets/wood.png",
-        "assets/brick.png",
-        "assets/sheep.png",
-        "assets/wheat.png",
-        "assets/ore.png"
+        "./assets/wood.png",
+        "./assets/brick.png",
+        "./assets/sheep.png",
+        "./assets/wheat.png",
+        "./assets/ore.png"
     };
     bank.loadResourceImages(iconPaths);
-    bank.loadBackgroundImage("assets/bank_bg.png");
 
-    // 4. 进入银行专属的消息循环 (Modal Loop)
-    // 这个循环会阻塞主程序的运行，直到玩家关闭银行
+    // 加载背景图 (如果没有会自动显示羊皮纸色块)
+    // 请确保 assets/bank_bg.png 存在，否则会显示纯色背景
+    bank.loadBackgroundImage("./assets/bank_bg.png");
+
+    // ==========================================
+    // 【关键修复 1】设置兜底背景色为白色
+    // ==========================================
+    setbkcolor(WHITE);
+    cleardevice();
+
+    // ==========================================
+    // 【关键修复 2】显式开启批量绘图
+    // 即使主循环里开过，这里是独立子循环，必须确保双缓冲开启
+    // 防止闪屏，保证按钮和背景同时出现
+    // ==========================================
+    BeginBatchDraw();
+
     bool isBankOpen = true;
     ExMessage msg;
 
@@ -33,43 +47,46 @@ inline void EnterBankMode(Player& currentPlayer) {
     int mouseX = 0;
     int mouseY = 0;
 
-    // 刷新一次以防止闪屏
-    FlushBatchDraw();
-
     while (isBankOpen) {
         // --- A. 处理输入 ---
-        // 使用 while 循环处理所有积压消息，保证流畅
+        // 使用 while 循环处理所有积压消息，保证交互流畅
         while (peekmessage(&msg, EM_MOUSE | EM_KEY, PM_REMOVE)) {
 
-            // 1. 更新鼠标位置
+            // 更新鼠标位置用于 draw
             if (msg.message == WM_MOUSEMOVE) {
                 mouseX = msg.x;
                 mouseY = msg.y;
             }
 
-            // 2. 处理 ESC 键退出
+            // 处理 ESC 键退出
             if (msg.message == WM_KEYDOWN && msg.vkcode == VK_ESCAPE) {
                 isBankOpen = false;
             }
 
-            // 3. 将消息传递给银行逻辑
-            // 如果 handleInput 返回 true，说明点击了关闭按钮
+            // 将消息传递给银行面板逻辑
+            // handleInput 返回 true 代表用户点击了关闭(X)按钮
             if (bank.handleInput(msg, currentPlayer)) {
                 isBankOpen = false;
             }
         }
 
         // --- B. 绘图 ---
+        // 1. 先擦除上一帧 (使用我们设置的黑色背景)
         cleardevice();
 
-        // 调用银行的绘制函数
+        // 2. 绘制所有银行内容 (背景图、按钮、图标)
+        // 传入 mouseX, mouseY 以实现悬停高亮效果
         bank.draw(currentPlayer, mouseX, mouseY);
 
+        // 3. 统一提交这一帧的绘图
         FlushBatchDraw();
 
-        // 稍微休眠，避免空转占用 100% CPU
-        Sleep(10);
+        // 4. 帧率控制 (约 60 FPS)
+        Sleep(16);
     }
 
-    // 循环结束，函数返回，控制权交回给 TestBank.cpp
+    // ==========================================
+    // 【关键修复 3】退出时结束本次批量绘图
+    // ==========================================
+    EndBatchDraw();
 }

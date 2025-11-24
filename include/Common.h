@@ -5,15 +5,15 @@
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
-// 状态 1: 当前显示哪个全屏 (GameController 拥有)
-enum class ActiveScreen {
-    VIEW_MAP,       // 显示全屏地图
-    VIEW_PLAYER_PANEL,  // 显示全屏玩家面板
-    VIEW_BANK_PANEL,
-    VIEW_DEV_CARD_PANEL,
-};
+//// 状态 : 当前显示哪个全屏 (GameController 拥有)
+//enum class ActiveScreen {
+//    VIEW_MAP,       // 显示全屏地图
+//    VIEW_PLAYER_PANEL,  // 显示全屏玩家面板
+//    VIEW_BANK_PANEL,
+//    VIEW_DEV_CARD_PANEL,
+//};
 
-// 状态 2: 当前正在执行什么动作 (GameController 拥有)
+// 状态 : 当前正在执行什么动作 (GameController 拥有)
 enum class GameState {
     IDLE,             // 默认状态，等待玩家操作
     END_TURN,
@@ -40,7 +40,6 @@ enum class ButtonTypeFromPanel {
 };
 
 // 定义资源类型
-// 用 resources[WOOD] 来访问木
 enum ResourceType
 {
     WOOD,   // 木头
@@ -48,7 +47,7 @@ enum ResourceType
     SHEEP,  // 羊
     WHEAT,  // 小麦
     ORE,    // 石头
-    RESOURCE_COUNT // 资源种类的总数 (5)
+    RESOURCE_COUNT // 资源种类的总数 :5
 };
 
 // 地块资源类型
@@ -68,7 +67,7 @@ enum BuildingType
     ROAD,   // 路
     SETTLEMENT,  // 村庄
     CITY,  // 城市
-    BUILDING_COUNT // 建筑种类的总数 (3)
+    BUILDING_COUNT // 建筑种类的总数: 3
 };
 
 // 定义发展卡类型
@@ -91,7 +90,7 @@ const int BUILDING_COSTS[BUILDING_COUNT][RESOURCE_COUNT] = {
 };
 
 // 建筑得分表
-const int BUILDING_POINTS[BUILDING_COUNT]= {
+const int BUILDING_POINTS[BUILDING_COUNT] = {
     0,1,2
 };
 

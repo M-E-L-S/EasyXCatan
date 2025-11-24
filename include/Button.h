@@ -35,9 +35,16 @@ struct Button {
         // 绘制文字 (居中)
         settextcolor(enabled ? BLACK : DARKGRAY);
         setbkmode(TRANSPARENT);
-        int textW = textwidth((LPCTSTR)text.c_str());
-        int textH = textheight((LPCTSTR)text.c_str());
-        outtextxy(x + (w - textW) / 2, y + (h - textH) / 2, (LPCTSTR)text.c_str());
+        // 1. 获取 C 风格字符串
+        const char* c_str = text.c_str();
+
+        // 2. 使用 c_str 进行宽度和高度计算
+        // 假设您的 EasyX 采用的是多字节字符集 (MBCS)
+        int textW = textwidth(c_str);
+        int textH = textheight(c_str);
+
+        // 3. 绘制文字
+        outtextxy(x + (w - textW) / 2, y + (h - textH) / 2, c_str);
 
     }
 

@@ -9,8 +9,8 @@
 
 DevCardPanel::DevCardPanel(int startX, int startY)
     : panelX(startX), panelY(startY),
-    confirmButton(0, 0, 80, 35, "确认", RGB(50, 200, 50)),
-    cancelButton(0, 0, 80, 35, "取消", RGB(200, 50, 50))
+    confirmButton(0, 0, 80, 35, "confirm", RGB(50, 200, 50)),
+    cancelButton(0, 0, 80, 35, "cancel", RGB(200, 50, 50))
 {
     struct CardInfo {
         DevCardType t;
@@ -20,12 +20,13 @@ DevCardPanel::DevCardPanel(int startX, int startY)
     };
 
     CardInfo infos[] = {
-        { KNIGHT,         "骑士",      RGB(200,180,80),   true },
-        { ROAD_BUILDING,  "道路建设",  RGB(180,200,80),   true },
-        { YEAR_OF_PLENTY, "丰收之年",  RGB(80,200,120),   true },
-        { MONOPOLY,       "垄断",      RGB(200,80,120),   true },
-        { VICTORY_POINT,  "胜利点",    RGB(120,120,220),  false }
-    };
+            { KNIGHT,         "KNIGHT",      RGB(200,180,80),   true },
+            { ROAD_BUILDING,  "ROAD_BUILDING",  RGB(180,200,80),   true },
+            { YEAR_OF_PLENTY, "YEAR_OF_PLENTY",  RGB(80,200,120),   true },
+            { MONOPOLY,       "MONOPOLY",      RGB(200,80,120),   true },
+            { VICTORY_POINT,  "VICTORY_POINT",    RGB(120,120,220),  false }
+	};
+
 
     for (int i = 0; i < 5; i++) {
         auto& info = infos[i];
@@ -92,7 +93,7 @@ void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manag
     int usedThisTurn = manager.getNewThisTurn(player.getID(), d.type);
     int usable = total - usedThisTurn;
 
-    std::string info = "总数: " + std::to_string(total) + ", 可用: " + std::to_string(usable);
+    std::string info = "total: " + std::to_string(total) + ", usable: " + std::to_string(usable);
     setcolor(WHITE);
     outtextxy(boxX + 5, boxY + 5, info.c_str());
 
@@ -122,7 +123,7 @@ void DevCardPanel::draw(const DevCardManager& manager, const Player& player)
 
         setcolor(WHITE);
         settextstyle(18, 0, _T("宋体"));
-        outtextxy(X + 20, Y + 15, "确定要使用这张卡？");
+        outtextxy(X + 20, Y + 15, "confirm to use this card");
 
         setupConfirmButtons(X + 25, Y + 55);
         confirmButton.draw();

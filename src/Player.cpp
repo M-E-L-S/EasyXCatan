@@ -1,5 +1,6 @@
 #include "Player.h"
 
+
 // --- 构造函数 ---
 Player::Player(int id, COLORREF playerColor) :
     // 1. C++ 成员初始化列表
