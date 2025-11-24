@@ -88,8 +88,8 @@ extern void Resources_Discard(); //强盗丢卡
 extern void Resources_Discard(int playerId, int victim); //玩家抽资源
 // extern void Resources_DoDiscard(int playerId);
 // extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
-// // 最多的骑士特判
-// extern int Users_CheckMostKnight();
+// 最多的骑士特判
+extern int Users_CheckMostKnight();
 //
 // // ----- 交易组 -----
 // extern void Trade_Draw(int playerId);
