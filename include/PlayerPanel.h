@@ -19,6 +19,7 @@ public:
     // 请在游戏初始化时调用此函数，传入包含5个文件路径的数组
     // 顺序必须对应：WOOD, BRICK, SHEEP, WHEAT, ORE
     void loadResourceImages(const char* filePaths[RESOURCE_COUNT]);
+    void loadBackgroundImage(const char* filePath);
 
     /*
      * 绘制整个全屏面板 (GameController 每一帧都会调用)
@@ -50,6 +51,9 @@ private:
     // 存储5种资源的图片对象
     IMAGE resourceImages[RESOURCE_COUNT];
     bool hasImagesLoaded; // 标记是否已加载图片
+    // 存储背景图片对象
+    IMAGE backgroundImage;
+    bool hasBackgroundLoaded;
     // 准备好图片的路径 (确保图片在项目目录下)
 
     // --- UI 控件 ---

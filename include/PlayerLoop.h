@@ -35,17 +35,18 @@ std::string DevCardTypeToString(DevCardType card) {
 void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
 
     //  初始化面板
-    PlayerPanel panel(SCREEN_WIDTH, SCREEN_HEIGHT);
+    PlayerPanel panel(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
     // 加载资源图片 (路径请根据你的实际项目结构调整)
     const char* resPaths[RESOURCE_COUNT] = {
-        "./assets/wood.png",
-        "./assets/brick.png",
-        "./assets/sheep.png",
-        "./assets/wheat.png",
-        "./assets/ore.png"
+        "./assets/wood.jpg",
+        "./assets/brick.jpg",
+        "./assets/sheep.jpg",
+        "./assets/wheat.jpg",
+        "./assets/ore.jpg"
     };
-    panel.loadResourceImages(resPaths); // 如果需要加载图片请取消注释
+    panel.loadResourceImages(resPaths);
+    panel.loadBackgroundImage("assets/player_bg.jpg");
 
 
     BeginBatchDraw();

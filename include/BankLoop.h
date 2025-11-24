@@ -7,19 +7,19 @@
 // 传入当前玩家引用，以便修改资源
 inline void EnterBankMode(Player& currentPlayer) {
     // 1. 获取当前窗口大小 (适配全屏)
-    int w = 1600;
-    int h = 1080;
+    int w = GetSystemMetrics(SM_CXSCREEN);
+    int h = GetSystemMetrics(SM_CYSCREEN);
 
     // 2. 创建银行实例
     BankPanel bank(w, h);
 
     // 3. 加载资源 (确保 assets 文件夹在 exe 同级目录)
     const char* iconPaths[RESOURCE_COUNT] = {
-        "./assets/wood.png",
-        "./assets/brick.png",
-        "./assets/sheep.png",
-        "./assets/wheat.png",
-        "./assets/ore.png"
+        "./assets/wood.jpg",
+        "./assets/brick.jpg",
+        "./assets/sheep.jpg",
+        "./assets/wheat.jpg",
+        "./assets/ore.jpg"
     };
     bank.loadResourceImages(iconPaths);
 

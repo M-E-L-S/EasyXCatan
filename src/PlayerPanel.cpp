@@ -5,25 +5,23 @@
 #include <string>
 
 // --- 布局常量 ---
-
-// 第1栏: 玩家信息 & 资源
+// 第1栏
 const int COL1_X = 150;
-const int INFO_Y = 10;
-const int RES_Y = 50;     // 资源图片起始Y坐标
-const int RES_ICON_SIZE = 130; // 假设资源图片显示大小为 200x200
+const int INFO_Y = 70;
+const int RES_Y = 120;     // 资源图片起始Y坐标
+const int RES_ICON_SIZE = 130; // 资源图片显示大小
 const int RES_GAP = 20;    // 资源之间的间距
 
+// 第2栏
+const int COL2_X = 450;
+const int DEV_Y = 600;     // 发展卡文字
 
-// 第2栏: 核心动作
-const int COL2_X = 630;
-const int BUILD_Y = 150;   // 建造按钮起始Y
-const int TRADE_Y = 400;   // 交易/卡牌按钮起始Y
-
-// 第3栏: 游戏流程 & 状态
+// 第3栏
 const int COL3_X = 1200;
 const int STATUS_Y = 50;   // 状态文字
-const int DEV_Y = 300;     // 发展卡文字
-const int FLOW_Y = 600;    // 流程按钮起始Y
+const int BUILD_Y = 150;   // 建造按钮起始Y
+const int TRADE_Y = 400;   // 交易/卡牌按钮起始Y
+const int FLOW_Y = 750;    // 流程按钮起始Y
 
 // 按钮大小
 const int BTN_W = 300;
@@ -32,39 +30,40 @@ const int BTN_GAP = 10;    // 按钮垂直间距
 
 PlayerPanel::PlayerPanel(int screenWidth, int screenHeight)
     : width(screenWidth), height(screenHeight), hasImagesLoaded(false)
+    , hasBackgroundLoaded(false)
 {
     // 1. 安全预留空间，防止 vector 扩容导致野指针
     buttons.reserve(30);
 
-    // --- 第2栏: 建造按钮组 ---
+    // --- 建造按钮组 ---
     int currentY = BUILD_Y;
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Road", RGB(111,94,86)));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Build Road", RGB(111,94,86)));
     buttonMap[ButtonTypeFromPanel::BUILD_ROAD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build Settlement", RGB(111, 94, 86)));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Build Settlement", RGB(111, 94, 86)));
     buttonMap[ButtonTypeFromPanel::BUILD_SETTLEMENT] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Build City", RGB(111, 94, 86)));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Build City", RGB(111, 94, 86)));
     buttonMap[ButtonTypeFromPanel::BUILD_CITY] = &buttons.back();
 
-    // --- 第2栏: 购买/交易按钮组 ---
+    // --- 购买/交易按钮组 ---
     currentY = TRADE_Y;
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Buy Dev Card", RGB(38,111,64)) );
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Buy Dev Card", RGB(38,111,64)) );
     buttonMap[ButtonTypeFromPanel::BUY_DEV_CARD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Use Dev Card", RGB(38, 111, 64)));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Use Dev Card", RGB(38, 111, 64)));
     buttonMap[ButtonTypeFromPanel::USE_DEV_CARD] = &buttons.back();
     currentY += (BTN_H + BTN_GAP);
 
-    buttons.push_back(Button(COL2_X, currentY, BTN_W, BTN_H, "Trade (Bank 4:1)", RGB(38, 111, 64)));
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Trade (Bank 4:1)", RGB(38, 111, 64)));
     buttonMap[ButtonTypeFromPanel::TRADE_BANK] = &buttons.back();
 
-    // --- 第3栏: 游戏流程按钮 ---
+    // --- 游戏流程按钮 ---
     currentY = FLOW_Y;
 
     buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Switch To Map", RGB(22,81,136)));
@@ -85,20 +84,34 @@ void PlayerPanel::loadResourceImages(const char* filePaths[RESOURCE_COUNT]) {
     }
     hasImagesLoaded = true;
 }
+// 加载背景图片
+void PlayerPanel::loadBackgroundImage(const char* filePath) {
+    // loadimage(IMAGE指针, 路径, 宽, 高)
+    // 使用类的 width 和 height 让图片自动拉伸铺满整个面板
+    loadimage(&backgroundImage, filePath, width, height);
+    hasBackgroundLoaded = true;
+}
 
 // --- 绘制主函数 ---
 void PlayerPanel::draw(const Player& player, GameState state, int lastDiceResult) {
-    // [修复] 使用 RGB 而不是 EGERGB
-    setfillcolor(RGB(195,171,140)); // Alice Blue
-    solidrectangle(0, 0, width, height);
+    // 绘制背景逻辑
+    if (hasBackgroundLoaded) {
+        // 如果加载了背景图，直接绘制
+        putimage(0, 0, &backgroundImage);
+    }
+    else {
+        // 如果没加载背景图，使用原来的纯色填充作为“保底”
+        setfillcolor(RGB(195, 171, 140)); // Alice Blue
+        solidrectangle(0, 0, width, height);
+    }
 
-    // 2. 绘制各栏内容
+    //  绘制各栏内容
     drawPlayerInfo(player);
     drawResources(player);
     drawDevCards(player);     // 显示在第一栏下方
     drawStatusMessage(state, lastDiceResult); // 显示在第三栏上方
 
-    // 3. 绘制按钮 (逻辑状态更新)
+    //  绘制按钮 (逻辑状态更新)
     drawButtons(player, state);
 }
 
@@ -125,7 +138,7 @@ void PlayerPanel::drawPlayerInfo(const Player& player) {
 
 void PlayerPanel::drawResources(const Player& player) {
     setbkmode(TRANSPARENT);
-    settextstyle(20, 0, _T("Arial"));
+    settextstyle(30, 0, _T("Arial"));
     settextcolor(BLACK);
 
     // 资源名称备用（如果没有图片）
@@ -140,15 +153,28 @@ void PlayerPanel::drawResources(const Player& player) {
         int count = player.getResourceCount(type);
 
         if (hasImagesLoaded) {
-            // 1. 绘制图片
+            //  绘制图片
             putimage(COL1_X, currentY, &resourceImages[i]);
 
-            // 2. 绘制数量 (显示在图片右侧)
-            std::string countStr = "x " + std::to_string(count) + "   " + resNames[i];
+            //  绘制数量
+            std::string countStr = "x " + std::to_string(count) + "   " ;
 
-            // 垂直居中对齐文字
-            int textY = currentY + (RES_ICON_SIZE - 20) / 2;
+            // 设置颜色
+            settextcolor(BLACK);
+
+            // 设置字体：settextstyle(高度, 宽度, 字体名)
+            // 宽度设为 0 表示自适应，"微软雅黑" 或 "Arial" 等
+            int fontSize = 30;
+            settextstyle(fontSize, 0, _T("微软雅黑"));
+
+            //  垂直居中对齐文字
+            int textY = currentY + (RES_ICON_SIZE - fontSize) / 2;
+
             outtextxy(COL1_X + RES_ICON_SIZE + 10, textY, countStr.c_str());
+
+            // 在画完后把颜色/字体改回默认值，以免影响后续绘制
+            settextcolor(BLACK);
+            settextstyle(20, 0, _T("Arial"));
         }
         else {
             // 如果还没加载图片，画一个色块代替
@@ -174,7 +200,7 @@ void PlayerPanel::drawDevCards(const Player& player) {
     settextstyle(18, 0, _T("Arial"));
     settextcolor(BLACK);
 
-    outtextxy(COL3_X, startY - 25, "Dev Cards:");
+    outtextxy(COL2_X, startY - 25, "Dev Card Number:");
 
     const char* devCardNames[DEV_CARD_COUNT] = {
         "Knight", "VP", "Road Build", "Monopoly", "Plenty"
@@ -185,14 +211,14 @@ void PlayerPanel::drawDevCards(const Player& player) {
         int count = player.getDevCardCount(type);
         std::string str = std::string(devCardNames[i]) + ": " + std::to_string(count);
 
-        outtextxy(COL3_X, startY + (i * 25), str.c_str());
+        outtextxy(COL2_X, startY + (i * 25), str.c_str());
     }
 }
 
 void PlayerPanel::drawStatusMessage(GameState state, int lastDiceResult) {
     setbkmode(TRANSPARENT);
     settextcolor(BLUE);
-    settextstyle(22, 0, _T("Arial Black"));
+    settextstyle(30, 0, _T("Arial Black"));
 
     // 显示骰子结果
     if (lastDiceResult > 0) {
@@ -212,7 +238,7 @@ void PlayerPanel::drawStatusMessage(GameState state, int lastDiceResult) {
 
     switch (state) {
     case GameState::IDLE:
-        msg = "Choose an action from the middle panel.";
+        msg = "Choose an action from the panel below.";
         break;
     case GameState::AWAITING_MAP_CLICK_FOR_SETTLEMENT:
         msg = "Click 'Switch To Map' and place a Settlement.";

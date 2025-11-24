@@ -10,16 +10,20 @@
 
 
 void DevCardLoop(Player& player1) {
-    //initgraph(1920, 1080);
-    //setbkcolor(WHITE);
+
     cleardevice();
     BeginBatchDraw();
 
     std::vector<Player*> allPlayers = { &player1};
     DevCardManager manager(allPlayers);
 
-    // 在 main 中创建 DevCardPanel 对象
-    DevCardPanel panel(10, 30);
+    // 在 main 中创建 DevCardPanel 对象:改变按钮的位置
+    DevCardPanel panel(130, GetSystemMetrics(SM_CYSCREEN) - 165);
+
+    // [新增] 加载背景图片
+    // 假设你的窗口是 1280x720，你可以传入宽高达强制拉伸铺满
+    // 或者直接 panel.loadBackgroundImage("assets/dev_bg.jpg");
+    panel.loadBackgroundImage("assets/dev_bg.jpg", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)-30);
 
     // 调用接口显示面板
     int chosenCard = ShowDevCardPanel(player1, manager, panel);

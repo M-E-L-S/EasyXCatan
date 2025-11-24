@@ -19,9 +19,9 @@ BankPanel::BankPanel(int screenWidth, int screenHeight)
     for (int i = 0; i < RESOURCE_COUNT; i++) getQuantities[i] = 0;
 
     // 按钮布局：放在屏幕底部居中
-    int btnW = 110;
-    int btnH = 60;
-    int btnX = 750;
+    int btnW = 200;
+    int btnH = 70;
+    int btnX = 740;
     int btnY = 820;
 
     // 确认按钮
@@ -30,7 +30,7 @@ BankPanel::BankPanel(int screenWidth, int screenHeight)
         btnY,
         btnW, btnH,
         "Confirm Trade",
-        RGB(100, 100, 100)
+        RGB(38,111,64)
     );
     btnConfirm->enabled = false;
 
@@ -76,7 +76,7 @@ void BankPanel::drawArtisticText(int x, int y, const TCHAR* text, int size, COLO
     outtextxy(x, y, text);
 
     // 高光
-    settextcolor(WHITE);
+    settextcolor(RGB(111,94,86));
     outtextxy(x - 1, y - 1, text);
 }
 
@@ -99,7 +99,7 @@ void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
     const TCHAR* title = _T("BANK RESOURCE EXCHANGE");
     settextstyle(50, 0, _T("Arial Black"));
     int titleW = textwidth(title);
-    drawArtisticText((width - titleW) / 2, 50, title, 50);
+    drawArtisticText((width - titleW) / 2-270, 50, title, 100);
 
     // 3. 计算垂直布局 Y 坐标
     int getY = height * 0.25;      // GET区在屏幕 1/4 处

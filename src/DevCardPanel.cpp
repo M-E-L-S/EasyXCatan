@@ -3,12 +3,13 @@
 #include <graphics.h>
 #include <string>
 
-#define BTN_W 360
-#define BTN_H 600
-#define GAP   20
+#define BTN_W 110
+#define BTN_H 110
+#define GAP   225
 
 DevCardPanel::DevCardPanel(int startX, int startY)
     : panelX(startX), panelY(startY),
+    hasBackgroundLoaded(false), // [新增] 初始化
     confirmButton(0, 0, 80, 35, "confirm", RGB(50, 200, 50)),
     cancelButton(0, 0, 80, 35, "cancel", RGB(200, 50, 50))
 {
@@ -20,11 +21,11 @@ DevCardPanel::DevCardPanel(int startX, int startY)
     };
 
     CardInfo infos[] = {
-            { KNIGHT,         "KNIGHT",      RGB(200,180,80),   true },
-            { ROAD_BUILDING,  "ROAD_BUILDING",  RGB(180,200,80),   true },
-            { YEAR_OF_PLENTY, "YEAR_OF_PLENTY",  RGB(80,200,120),   true },
-            { MONOPOLY,       "MONOPOLY",      RGB(200,80,120),   true },
-            { VICTORY_POINT,  "VICTORY_POINT",    RGB(120,120,220),  false }
+            { KNIGHT,         "KNIGHT",      RGB(195,171,140),   true },
+            { ROAD_BUILDING,  "ROAD",  RGB(195,171,140),   true },
+            { YEAR_OF_PLENTY, "PLENTY",  RGB(195,171,140),   true },
+            { MONOPOLY,       "MONO",     RGB(195,171,140),   true },
+            { VICTORY_POINT,  "POINT",    RGB(195,171,140),  false }
 	};
 
 
@@ -68,17 +69,17 @@ void DevCardPanel::update(const Player& player, const DevCardManager& manager)
 
 void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manager, const Player& player)
 {
-    settextstyle(16, 0, _T("宋体"));
+    /*settextstyle(16, 0, _T("宋体"));
     setcolor(WHITE);
 
     std::string s = d.name + (" x" + std::to_string(d.count));
-    outtextxy(d.countX, d.countY, s.c_str());
+    outtextxy(d.countX, d.countY, s.c_str());*/
 
     if (d.type != VICTORY_POINT && selectedCardType == (DevCardType)-1)
         d.useButton.draw();
 
     // ----------------- 绘制总数和可用数量框 -----------------
-    int boxX = d.useButton.x;
+    /*int boxX = d.useButton.x;
     int boxY = d.useButton.y + d.useButton.h + 5;
     int boxW = d.useButton.w;
     int boxH = 55;
@@ -86,16 +87,16 @@ void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manag
     setfillcolor(RGB(60, 60, 60));
     bar(boxX, boxY, boxX + boxW, boxY + boxH);
     setlinecolor(WHITE);
-    rectangle(boxX, boxY, boxX + boxW, boxY + boxH);
+    rectangle(boxX, boxY, boxX + boxW, boxY + boxH);*/
 
     // 获取可用数量
-    int total = player.getDevCardCount(d.type);
+    /*int total = player.getDevCardCount(d.type);
     int usedThisTurn = manager.getNewThisTurn(player.getID(), d.type);
     int usable = total - usedThisTurn;
 
     std::string info = "total: " + std::to_string(total) + ", usable: " + std::to_string(usable);
     setcolor(WHITE);
-    outtextxy(boxX + 5, boxY + 5, info.c_str());
+    outtextxy(boxX + 5, boxY + 5, info.c_str());*/
 
 }
 
@@ -110,6 +111,17 @@ void DevCardPanel::setupConfirmButtons(int x, int y)
 void DevCardPanel::draw(const DevCardManager& manager, const Player& player)
 {
     if (!visible) return;
+
+    // [新增] 绘制背景图
+    // 因为 DevCardShow.cpp 里每帧都 cleardevice，所以我们从 (0,0) 开始铺满背景
+    if (hasBackgroundLoaded) {
+        putimage(0, 0, &backgroundImage);
+    }
+    // 如果没有背景图，你可能想要一个半透明的深色背景来遮挡下面的游戏地图
+     //else {
+     //   setfillcolor(RGB(0, 0, 0, 200)); // 如果你的 EasyX 版本支持 RGBA
+     //   solidrectangle(0, 0, getwidth(), getheight());
+     //}
 
     for (auto& d : cardDisplays)
         drawCard(d, manager, player);
@@ -156,4 +168,16 @@ int DevCardPanel::handleClick(int mx, int my)
     }
 
     return -1;
+}
+
+// [新增] 加载背景图片实现
+void DevCardPanel::loadBackgroundImage(const char* filePath, int optionalWidth, int optionalHeight) {
+    // 如果指定了宽和高，就缩放加载；否则按原图大小加载
+    if (optionalWidth > 0 && optionalHeight > 0) {
+        loadimage(&backgroundImage, filePath, optionalWidth, optionalHeight);
+    }
+    else {
+        loadimage(&backgroundImage, filePath);
+    }
+    hasBackgroundLoaded = true;
 }

@@ -5,7 +5,7 @@
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
-//// 状态 : 当前显示哪个全屏 (GameController 拥有)
+// 状态 : 当前显示哪个全屏 (GameController 拥有)
 //enum class ActiveScreen {
 //    VIEW_MAP,       // 显示全屏地图
 //    VIEW_PLAYER_PANEL,  // 显示全屏玩家面板

@@ -8,19 +8,19 @@
 // 定义模态框的颜色和尺寸
 #define MODAL_WIDTH 400
 #define MODAL_HEIGHT 200
-#define MODAL_BG_COLOR RGB(245, 245, 245) // 浅灰色背景
+#define MODAL_BG_COLOR RGB(195,171,140) // 浅棕色背景
 #define MODAL_BORDER_COLOR RGB(50, 50, 50)  // 深色边框
-#define BUTTON_COLOR RGB(100, 180, 100)    // 绿色按钮
+#define BUTTON_COLOR RGB(194,37,37)    // 红色按钮
 
 // 警告/提示函数：会阻塞直到用户点击 "确定"
 void textWindow(const std::string& message) {
     // 自动获取屏幕/窗口中心坐标
     int screenW = SCREEN_WIDTH;
     int screenH = SCREEN_HEIGHT;
-    
+
     int modalX = (screenW - MODAL_WIDTH) / 2;
     int modalY = (screenH - MODAL_HEIGHT) / 2;
-    
+
     // 创建一个确认按钮
     int btnW = 100;
     int btnH = 40;
@@ -28,7 +28,7 @@ void textWindow(const std::string& message) {
     int btnX = modalX + MODAL_WIDTH - btnW - 20;
     int btnY = modalY + MODAL_HEIGHT - btnH - 15;
 
-    Button confirmButton(btnX, btnY, btnW, btnH, "确定", BUTTON_COLOR);
+    Button confirmButton(btnX, btnY, btnW, btnH, "Return", BUTTON_COLOR);
 
     // 开启批量绘图，确保警告框一次性弹出
     BeginBatchDraw();
@@ -38,18 +38,18 @@ void textWindow(const std::string& message) {
     while (!exitModal) {
         // --- 绘制覆盖层（可选，用于半透明地遮挡底层画面）---
         // 不绘制半透明层，直接在现有画面上画，EasyX 效果最好
-        
+
         // --- 绘制模态框主体 ---
         // 绘制阴影和边框
-        setfillcolor(RGB(100, 100, 100));
+        setfillcolor(RGB(195, 171, 140));
         solidroundrect(modalX + 5, modalY + 5, modalX + MODAL_WIDTH + 5, modalY + MODAL_HEIGHT + 5, 8, 8); // 简单的阴影
 
         // 绘制主体背景
         setfillcolor(MODAL_BG_COLOR);
         setlinecolor(MODAL_BORDER_COLOR);
-        setlinewidth(2);
+        //setlinewidth(2);
         roundrect(modalX, modalY, modalX + MODAL_WIDTH, modalY + MODAL_HEIGHT, 8, 8);
-        setlinewidth(1); // 恢复默认线宽
+        //setlinewidth(1); // 恢复默认线宽
 
         // --- 绘制提示文字 ---
         settextcolor(BLACK);
