@@ -51,7 +51,7 @@ enum class TurnPhase {
 extern void Map_Init(int seed);
 // 地图绘制
 extern void Map_Draw();
-// 玩家交易属性（0元购, 4:1, 3:1, 2:1……）
+// 玩家交易属性（4:1, 3:1, 2:1……）
 extern vector<bool> Map_GetTradeOption(int playerId);
 // 资源产出(ID, type, amount)
 extern vector<vector<pair<ResourceType, int>>> Map_ProduceResources(int diceRoll);
@@ -244,11 +244,11 @@ void HandleResourceThrow(){
         if (discard > 7) {
             discard /= 2;
             while (discard){
-                Resources_DoDiscard(G.currentPlayer);
+                Resources_DoDiscard(i);
                 MouseEvent evt = PollMouseEvent();
 
                 if (evt.leftDown){
-                    const auto res = Resources_DoDiscard(G.currentPlayer, evt.x, evt.y);
+                    const auto res = Resources_DoDiscard(i, evt.x, evt.y);
                     if (res != ResourceType::None){
                         Resources_Dec(i, res, 1);
                         --discard;
@@ -353,16 +353,19 @@ void HandleDevCard(const MouseEvent &evt){
         switch (card){
             case DevCardType::Knight:{
                 G.phase = TurnPhase::RobberResolve;
+                G.PlayedDevCard = true;
                 break;
             }
             case DevCardType::Monopoly:{
                 G.isFree = true;
                 G.phase = TurnPhase::Trading;
+                G.PlayedDevCard = true;
                 break;
             }
             case DevCardType::RoadBuilding:{
                 G.building = BuildType::DoubleRoad;
                 G.phase = TurnPhase::Build;
+                G.PlayedDevCard = true;
                 break;
             }
             case DevCardType::YearOfPlenty:{
@@ -377,6 +380,7 @@ void HandleDevCard(const MouseEvent &evt){
                 }
                 Resources_Add(G.currentPlayer, {{res, cnt}});
                 G.phase = TurnPhase::TurnStart;
+                G.PlayedDevCard = true;
                 break;
             }
             default:break;
@@ -419,6 +423,7 @@ void HandleTurnEnd() {
     }
     G.currentPlayer = G.currentPlayer % G.playerCount + 1;
     G.phase = TurnPhase::DiceRoll;
+    G.PlayedDevCard = false;
 }
 
 /* -----------------------
