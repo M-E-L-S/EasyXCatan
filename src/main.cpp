@@ -12,7 +12,7 @@ using namespace std;
     基本类型与枚举
     ----------------------- */
 enum class ResourceType { Wood, Brick, Ore, Sheep, Wheat, None };
-enum class BuildType { Road, Settlement, City, DevCard, DoubleRoad, None };
+enum class BuildType { Road, Settlement, City, DoubleRoad, None };
 //enum class TradeType { Bank, Player, Port, None };
 //enum class DevCardType { Knight, VictoryPoint, Monopoly, RoadBuilding, YearOfPlenty, None };
 enum class ActionType { SwitchToMap, BuildRoad, BuildSettlement, BuildCity, Knight, RoadBuilding, EndTurn, None};
