@@ -1,4 +1,4 @@
-#include "BankPanel.h"
+#include "HarborPanel.h"
 #include <cstdio>
 #include <tchar.h>
 #include <string>
@@ -12,7 +12,7 @@ static const TCHAR* RES_NAMES[] = {
 static const int ICON_SIZE = 100;  // 图标大一点，适应全屏
 static const int ICON_GAP = 60;    // 图标之间的间距
 
-BankPanel::BankPanel(int screenWidth, int screenHeight)
+HarborPanel::HarborPanel(int screenWidth, int screenHeight)
     : width(screenWidth), height(screenHeight),
     selectedGiveType(-1), hasImagesLoaded(false), hasBgLoaded(false)
 {
@@ -44,7 +44,7 @@ BankPanel::BankPanel(int screenWidth, int screenHeight)
     );
 }
 
-void BankPanel::loadResourceImages(const char* filePaths[RESOURCE_COUNT]) {
+void HarborPanel::loadResourceImages(const char* filePaths[RESOURCE_COUNT]) {
     for (int i = 0; i < RESOURCE_COUNT; i++) {
         loadimage(&resourceImages[i], (LPCTSTR)filePaths[i], ICON_SIZE, ICON_SIZE, true);
     }
@@ -52,18 +52,18 @@ void BankPanel::loadResourceImages(const char* filePaths[RESOURCE_COUNT]) {
 }
 
 // 【新增】加载背景图片实现
-void BankPanel::loadBackgroundImage(const char* filePath) {
+void HarborPanel::loadBackgroundImage(const char* filePath) {
     // 缩放加载图片以适应面板大小
     loadimage(&bgImage, (LPCTSTR)filePath, width, height, true);
     hasBgLoaded = true;
 }
 
-int BankPanel::getResourceAtClick(int mouseX, int mouseY, int uiOffsetX, int uiOffsetY) {
+int HarborPanel::getResourceAtClick(int mouseX, int mouseY, int uiOffsetX, int uiOffsetY) {
     // 全屏模式下逻辑内嵌，此函数暂时不用，但保留以防报错
     return -1;
 }
 
-void BankPanel::drawArtisticText(int x, int y, const TCHAR* text, int size, COLORREF mainColor) {
+void HarborPanel::drawArtisticText(int x, int y, const TCHAR* text, int size, COLORREF mainColor) {
     setbkmode(TRANSPARENT);
     settextstyle(size, 0, _T("Arial Black"));
 
@@ -80,7 +80,7 @@ void BankPanel::drawArtisticText(int x, int y, const TCHAR* text, int size, COLO
     outtextxy(x - 1, y - 1, text);
 }
 
-void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
+void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
     // 1. 绘制全屏背景
     if (hasBgLoaded) {
         putimage(0, 0, &bgImage); // 贴背景图
@@ -96,7 +96,7 @@ void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
     }
 
     // 2. 标题 (屏幕顶部居中)
-    const TCHAR* title = _T("BANK RESOURCE EXCHANGE");
+    const TCHAR* title = _T("Harbor RESOURCE EXCHANGE");
     settextstyle(50, 0, _T("Arial Black"));
     int titleW = textwidth(title);
     drawArtisticText((width - titleW) / 2-270, 50, title, 100);
@@ -107,7 +107,7 @@ void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
     int giveY = height * 0.60;     // GIVE区在屏幕 3/5 处
 
     // 4. 绘制中间汇率 (屏幕居中)
-    const TCHAR* rateText = _T("Exchange Rate 4 : 1");
+    const TCHAR* rateText = _T("Exchange Rate 3 : 1");
     settextstyle(30, 0, _T("Arial Black"));
     int rateW = textwidth(rateText);
     drawArtisticText((width - rateW) / 2, middleY, rateText, 30, RGB(220, 20, 60));
@@ -197,7 +197,7 @@ void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
     btnCancel->draw();
 }
 
-bool BankPanel::handleInput(ExMessage& msg, Player& player) {
+bool HarborPanel::handleInput(ExMessage& msg, Player& player) {
     int mouseX = msg.x;
     int mouseY = msg.y;
 

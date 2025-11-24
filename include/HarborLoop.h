@@ -1,17 +1,17 @@
 #pragma once
 #include <graphics.h>
-#include "BankPanel.h"
+#include "HarborPanel.h"
 #include "Player.h"
 
 // 银行模块的入口函数
 // 传入当前玩家引用，以便修改资源
-inline void EnterBankMode(Player& currentPlayer) {
+inline void EnterHarborMode(Player& currentPlayer) {
     // 1. 获取当前窗口大小 (适配全屏)
     int w = GetSystemMetrics(SM_CXSCREEN);
     int h = GetSystemMetrics(SM_CYSCREEN);
 
     // 2. 创建银行实例
-    BankPanel bank(w, h);
+    HarborPanel harbor(w, h);
 
     // 3. 加载资源 (确保 assets 文件夹在 exe 同级目录)
     const char* iconPaths[RESOURCE_COUNT] = {
@@ -21,11 +21,11 @@ inline void EnterBankMode(Player& currentPlayer) {
         "./assets/wheat.jpg",
         "./assets/ore.jpg"
     };
-    bank.loadResourceImages(iconPaths);
+    harbor.loadResourceImages(iconPaths);
 
     // 加载背景图 (如果没有会自动显示羊皮纸色块)
     // 请确保 assets/bank_bg.png 存在，否则会显示纯色背景
-    bank.loadBackgroundImage("./assets/bank_bg.png");
+    harbor.loadBackgroundImage("./assets/bank_bg.png");
 
     // ==========================================
     // 【关键修复 1】设置兜底背景色为白色
@@ -65,7 +65,7 @@ inline void EnterBankMode(Player& currentPlayer) {
 
             // 将消息传递给银行面板逻辑
             // handleInput 返回 true 代表用户点击了关闭(X)按钮
-            if (bank.handleInput(msg, currentPlayer)) {
+            if (harbor.handleInput(msg, currentPlayer)) {
                 isBankOpen = false;
             }
         }
@@ -76,7 +76,7 @@ inline void EnterBankMode(Player& currentPlayer) {
 
         // 2. 绘制所有银行内容 (背景图、按钮、图标)
         // 传入 mouseX, mouseY 以实现悬停高亮效果
-        bank.draw(currentPlayer, mouseX, mouseY);
+        harbor.draw(currentPlayer, mouseX, mouseY);
 
         // 3. 统一提交这一帧的绘图
         FlushBatchDraw();
