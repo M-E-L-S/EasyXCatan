@@ -11,10 +11,11 @@ using namespace std;
 /* -----------------------
     基本类型与枚举
     ----------------------- */
-enum class ResourceType { Wood, Brick, Wheat, Sheep, Ore, ALL, None };
+enum class ResourceType { Wood, Brick, Ore, Sheep, Wheat, None };
 enum class BuildType { Road, Settlement, City, DevCard, DoubleRoad, None };
-enum class TradeType { Bank, Player, Port, None };
-enum class DevCardType { Knight, VictoryPoint, Monopoly, RoadBuilding, YearOfPlenty, None };
+//enum class TradeType { Bank, Player, Port, None };
+//enum class DevCardType { Knight, VictoryPoint, Monopoly, RoadBuilding, YearOfPlenty, None };
+enum class ActionType { SwitchToMap, BuildRoad, BuildSettlement, BuildCity, Knight, RoadBuilding, EndTurn, None};
 
 struct MouseEvent {
     bool hasEvent = false;
@@ -31,10 +32,10 @@ enum class TurnPhase {
     PreGameSetup_SecondPlacement,
     DiceRoll,
     ResourceDistribution,
-    ResourceThrow,
+    //ResourceThrow,
     TurnStart,
-    Trading,
-    DevCard,
+    //Trading,
+    //DevCard,
     Build,
     RobberResolve,
     TurnEnd,
@@ -51,7 +52,7 @@ enum class TurnPhase {
 extern void Map_Init(int seed);
 // 地图绘制
 extern void Map_Draw();
-// 玩家交易属性（4:1, 3:1, 2:1……）
+// 玩家交易属性（4:1, 3:1, 2:1木、砖、矿、羊、麦）（7位0-6）
 extern vector<bool> Map_GetTradeOption(int playerId);
 // 资源产出(ID, type, amount)
 extern vector<vector<pair<ResourceType, int>>> Map_ProduceResources(int diceRoll);
@@ -67,32 +68,37 @@ extern vector<int> Map_MoveRobber(int mouseX, int mouseY);
 
 // ----- 用户组 -----
 // 玩家初始化
-extern void Users_RegisterPlayer(const string &name, int id);
-extern void Users_Draw(int playerId);
+extern void PlayerInit(int playerId);
+// extern void Users_RegisterPlayer(const string &name, int id);
+// extern void Users_Draw(int playerId);
+// 主接口
+extern ActionType PlaterPanel(int playerId, int DiceRow, vector<bool> tradeOption);
 // 资源管理
-extern void Resources_Dec(int playerId, ResourceType type, int amount);
 extern void Resources_Add(int playerId, vector<pair<ResourceType, int>>);
-// 打出发展卡
-extern void Users_PlayDevCardUI();
-extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
+// extern void Resources_Dec(int playerId, ResourceType type, int amount);
+// // 打出发展卡
+// extern void Users_PlayDevCardUI();
+// extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
 // 分数管理(胜利判定)
 extern bool Score_CheckVictory(int playerId, int LongestRoadScore);
-// 资源卡数量检测（amount）
-extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
+// // 资源卡数量检测（amount）
+// extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
-extern void Resources_DoDiscard(int playerId);
-extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
-// 最多的骑士特判
-extern int Users_CheckMostKnight();
-
-// ----- 交易组 -----
-extern void Trade_Draw(int playerId);
-// 玩家购买
-extern bool Trade_PlayerBuy(int playerId, int mouseX, int mouseY);
-// 银行交易
-extern void Trade_BankTrade(int playerId, const vector<bool> &give, bool isFree);
-// 玩家间交易
-extern void Trade_PlayerTradeUI(int offeringPlayer, int receivingPlayer);
+extern void Resources_Discard(); //强盗丢卡
+extern void Resources_Discard(int playerId, int victim); //玩家抽资源
+// extern void Resources_DoDiscard(int playerId);
+// extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
+// // 最多的骑士特判
+// extern int Users_CheckMostKnight();
+//
+// // ----- 交易组 -----
+// extern void Trade_Draw(int playerId);
+// // 玩家购买
+// extern bool Trade_PlayerBuy(int playerId, int mouseX, int mouseY);
+// // 银行交易
+// extern void Trade_BankTrade(int playerId, const vector<bool> &give, bool isFree);
+// // 玩家间交易
+// extern void Trade_PlayerTradeUI(int offeringPlayer, int receivingPlayer);
 
 // ----- UI -----
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
@@ -100,8 +106,8 @@ void UI_DrawHUD(TurnPhase phase);
 void UI_DiceRowing(int d1, int d2);
 void UI_ShowWinner();
 int UI_ChooseID(vector<int> ids);
-ResourceType UI_ChooseResource();
-TurnPhase UI_PlayerMove(const MouseEvent &evt);
+//ResourceType UI_ChooseResource();
+bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
 
 // 获取鼠标事件
 MouseEvent PollMouseEvent() {
@@ -110,9 +116,7 @@ MouseEvent PollMouseEvent() {
         MOUSEMSG m = GetMouseMsg();
         evt.x = m.x;
         evt.y = m.y;
-
         evt.leftDown  = m.uMsg == WM_LBUTTONDOWN;
-        evt.rightDown = m.uMsg == WM_RBUTTONDOWN;
     }
     return evt;
 }
@@ -126,8 +130,8 @@ struct GameState {
     TurnPhase phase = TurnPhase::PreGameSetup_FirstPlacement;
     bool isSettlement = true;
     int diceRoll = 0;
-    bool PlayedDevCard = false;
-    bool isFree = false;
+    //bool PlayedDevCard = false;
+    //bool isFree = false;
     BuildType building = BuildType::None;
     bool gameRunning = true;
     unsigned int rngSeed = (unsigned int)time(nullptr);
@@ -141,8 +145,7 @@ void SetupGame(int numPlayers, unsigned int seed) {
     G.playerCount = numPlayers;
 
     for (int i = 1; i <= numPlayers; ++i) {
-        string defaultName = "Player" + to_string(i);
-        Users_RegisterPlayer(defaultName, i);
+        PlayerInit(i);
     }
     G.currentPlayer = 1;
     G.phase = TurnPhase::PreGameSetup_FirstPlacement;
@@ -198,7 +201,7 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
 
     cleardevice();
     Map_Draw();
-    Users_Draw(G.currentPlayer);
+    //Users_Draw(G.currentPlayer);
     UI_DrawHUD(G.phase);
     FlushBatchDraw();
 }
@@ -212,7 +215,8 @@ void HandleDiceRoll(const MouseEvent &evt){
         G.diceRoll = d1 + d2;
 
         if (G.diceRoll == 7) {
-            G.phase = TurnPhase::ResourceThrow;
+            Resources_Discard();
+            G.phase = TurnPhase::RobberResolve;
         } else {
             G.phase = TurnPhase::ResourceDistribution;
         }
@@ -220,7 +224,7 @@ void HandleDiceRoll(const MouseEvent &evt){
 
     cleardevice();
     Map_Draw();
-    Users_Draw(G.currentPlayer);
+    //Users_Draw(G.currentPlayer);
     UI_DrawHUD(G.phase);
     FlushBatchDraw();
 }
@@ -237,37 +241,37 @@ void HandleResourceDistribution() {
     G.phase = TurnPhase::TurnStart;
 }
 
-// 丢卡特殊处理
-void HandleResourceThrow(){
-    for (int i=1; i<=G.playerCount; ++i){
-        int discard = Resources_CheckDiscardCount(i, ResourceType::ALL);
-        if (discard > 7) {
-            discard /= 2;
-            while (discard){
-                Resources_DoDiscard(i);
-                MouseEvent evt = PollMouseEvent();
-
-                if (evt.leftDown){
-                    const auto res = Resources_DoDiscard(i, evt.x, evt.y);
-                    if (res != ResourceType::None){
-                        Resources_Dec(i, res, 1);
-                        --discard;
-                    }
-                }
-
-                cleardevice();
-                Map_Draw();
-                Users_Draw(i);
-                UI_DrawHUD(G.phase);
-                FlushBatchDraw();
-
-                Sleep(30);
-            }
-        }
-    }
-
-    G.phase = TurnPhase::RobberResolve;
-}
+// // 丢卡特殊处理
+// void HandleResourceThrow(){
+//     for (int i=1; i<=G.playerCount; ++i){
+//         int discard = Resources_CheckDiscardCount(i, ResourceType::ALL);
+//         if (discard > 7) {
+//             discard /= 2;
+//             while (discard){
+//                 Resources_DoDiscard(i);
+//                 MouseEvent evt = PollMouseEvent();
+//
+//                 if (evt.leftDown){
+//                     const auto res = Resources_DoDiscard(i, evt.x, evt.y);
+//                     if (res != ResourceType::None){
+//                         Resources_Dec(i, res, 1);
+//                         --discard;
+//                     }
+//                 }
+//
+//                 cleardevice();
+//                 Map_Draw();
+//                 Users_Draw(i);
+//                 UI_DrawHUD(G.phase);
+//                 FlushBatchDraw();
+//
+//                 Sleep(30);
+//             }
+//         }
+//     }
+//
+//     G.phase = TurnPhase::RobberResolve;
+// }
 
 // 强盗处理
 void HandleRobberResolve(const MouseEvent &evt) {
@@ -276,27 +280,29 @@ void HandleRobberResolve(const MouseEvent &evt) {
         const auto victims = Map_MoveRobber(evt.x, evt.y);
         if (!victims.empty()){
             const int victim = UI_ChooseID(victims);
-            while (true){
-                Resources_DoDiscard(victim);
-                MouseEvent event = PollMouseEvent();
 
-                if (event.leftDown){
-                    auto res = Resources_DoDiscard(victim, event.x, event.y);
-                    if (res != ResourceType::None){
-                        Resources_Dec(victim, res, 1);
-                        Resources_Add(G.currentPlayer, {{res, 1}});
-                        break;
-                    }
-                }
-
-                cleardevice();
-                Map_Draw();
-                Users_Draw(G.currentPlayer);
-                UI_DrawHUD(G.phase);
-                FlushBatchDraw();
-
-                Sleep(30);
-            }
+            Resources_Discard(G.currentPlayer,  victim);
+            // while (true){
+            //     Resources_DoDiscard(victim);
+            //     MouseEvent event = PollMouseEvent();
+            //
+            //     if (event.leftDown){
+            //         auto res = Resources_DoDiscard(victim, event.x, event.y);
+            //         if (res != ResourceType::None){
+            //             Resources_Dec(victim, res, 1);
+            //             Resources_Add(G.currentPlayer, {{res, 1}});
+            //             break;
+            //         }
+            //     }
+            //
+            //     cleardevice();
+            //     Map_Draw();
+            //     Users_Draw(G.currentPlayer);
+            //     UI_DrawHUD(G.phase);
+            //     FlushBatchDraw();
+            //
+            //     Sleep(30);
+            // }
 
             G.phase = TurnPhase::TurnStart;
         }
@@ -304,7 +310,7 @@ void HandleRobberResolve(const MouseEvent &evt) {
 
     cleardevice();
     Map_Draw();
-    Users_Draw(G.currentPlayer);
+    //Users_Draw(G.currentPlayer);
     UI_DrawHUD(G.phase);
     FlushBatchDraw();
 }
@@ -329,83 +335,114 @@ void HandleBuild(const MouseEvent &evt){
 
     cleardevice();
     Map_Draw();
-    Users_Draw(G.currentPlayer);
+    //Users_Draw(G.currentPlayer);
     UI_DrawHUD(G.phase);
     FlushBatchDraw();
 }
 
-void HandleTrading(const MouseEvent &evt){
-    if (evt.leftDown){
+// void HandleTrading(const MouseEvent &evt){
+//     if (evt.leftDown){
+//
+//     }
+//
+//     cleardevice();
+//     Map_Draw();
+//     Users_Draw(G.currentPlayer);
+//     Trade_Draw(G.currentPlayer);
+//     FlushBatchDraw();
+// }
 
-    }
-
-    cleardevice();
-    Map_Draw();
-    Users_Draw(G.currentPlayer);
-    Trade_Draw(G.currentPlayer);
-    FlushBatchDraw();
-}
-
-void HandleDevCard(const MouseEvent &evt){
-    Users_PlayDevCardUI();
-    if (evt.leftDown){
-        const auto card = Users_PlayDevCardUI(G.currentPlayer, evt.x, evt.y);
-        switch (card){
-            case DevCardType::Knight:{
-                G.phase = TurnPhase::RobberResolve;
-                G.PlayedDevCard = true;
-                break;
-            }
-            case DevCardType::Monopoly:{
-                G.isFree = true;
-                G.phase = TurnPhase::Trading;
-                G.PlayedDevCard = true;
-                break;
-            }
-            case DevCardType::RoadBuilding:{
-                G.building = BuildType::DoubleRoad;
-                G.phase = TurnPhase::Build;
-                G.PlayedDevCard = true;
-                break;
-            }
-            case DevCardType::YearOfPlenty:{
-                const auto res = UI_ChooseResource();
-                int cnt = 0;
-                for (int i=1; i<=G.playerCount; ++i){
-                    if (i != G.currentPlayer){
-                        const int amt = Resources_CheckDiscardCount(i, res);
-                        cnt += amt;
-                        Resources_Dec(i, res, amt);
-                    }
-                }
-                Resources_Add(G.currentPlayer, {{res, cnt}});
-                G.phase = TurnPhase::TurnStart;
-                G.PlayedDevCard = true;
-                break;
-            }
-            default:break;
-        }
-    }
-
-    cleardevice();
-    Map_Draw();
-    Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
-}
+// void HandleDevCard(const MouseEvent &evt){
+//     Users_PlayDevCardUI();
+//     if (evt.leftDown){
+//         const auto card = Users_PlayDevCardUI(G.currentPlayer, evt.x, evt.y);
+//         switch (card){
+//             case DevCardType::Knight:{
+//                 G.phase = TurnPhase::RobberResolve;
+//                 G.PlayedDevCard = true;
+//                 break;
+//             }
+//             case DevCardType::Monopoly:{
+//                 G.isFree = true;
+//                 G.phase = TurnPhase::Trading;
+//                 G.PlayedDevCard = true;
+//                 break;
+//             }
+//             case DevCardType::RoadBuilding:{
+//                 G.building = BuildType::DoubleRoad;
+//                 G.phase = TurnPhase::Build;
+//                 G.PlayedDevCard = true;
+//                 break;
+//             }
+//             case DevCardType::YearOfPlenty:{
+//                 const auto res = UI_ChooseResource();
+//                 int cnt = 0;
+//                 for (int i=1; i<=G.playerCount; ++i){
+//                     if (i != G.currentPlayer){
+//                         const int amt = Resources_CheckDiscardCount(i, res);
+//                         cnt += amt;
+//                         Resources_Dec(i, res, amt);
+//                     }
+//                 }
+//                 Resources_Add(G.currentPlayer, {{res, cnt}});
+//                 G.phase = TurnPhase::TurnStart;
+//                 G.PlayedDevCard = true;
+//                 break;
+//             }
+//             default:break;
+//         }
+//     }
+//
+//     cleardevice();
+//     Map_Draw();
+//     //Users_Draw(G.currentPlayer);
+//     UI_DrawHUD(G.phase);
+//     FlushBatchDraw();
+// }
 
 // 玩家回合（玩家可以交易/购买/建造）
 void HandleTurnStart(const MouseEvent &evt) {
     if (evt.leftDown){
-        const auto act = UI_PlayerMove(evt);
-        if (act != TurnPhase::None){
-            G.phase = act;
+        const bool panel = UI_SwitchToPlayerPanel(evt);
+
+        if (panel){
+            const auto act = PlaterPanel(G.currentPlayer, G.diceRoll, Map_GetTradeOption(G.currentPlayer));
+            switch (act){
+                case ActionType::BuildRoad:
+                    G.building = BuildType::Road;
+                    G.phase = TurnPhase::Build;
+                    break;
+                case ActionType::BuildSettlement:
+                    G.building = BuildType::Settlement;
+                    G.phase = TurnPhase::Build;
+                    break;
+                case ActionType::BuildCity:
+                    G.building = BuildType::City;
+                    G.phase = TurnPhase::Build;
+                    break;
+                case ActionType::RoadBuilding:
+                    G.building = BuildType::DoubleRoad;
+                    G.phase = TurnPhase::Build;
+                    break;
+                case ActionType::Knight:
+                    G.phase = TurnPhase::RobberResolve;
+                    break;
+                case ActionType::EndTurn:
+                    G.phase = TurnPhase::TurnEnd;
+                    break;
+                default:
+                    G.phase = TurnPhase::TurnStart;
+                    break;
+            }
         }
+        // if (act != TurnPhase::None){
+        //     G.phase = act;
+        // }
     }
 
     cleardevice();
     Map_Draw();
-    Users_Draw(G.currentPlayer);
+    //Users_Draw(G.currentPlayer);
     UI_DrawHUD(G.phase);
     FlushBatchDraw();
 }
@@ -423,7 +460,7 @@ void HandleTurnEnd() {
     }
     G.currentPlayer = G.currentPlayer % G.playerCount + 1;
     G.phase = TurnPhase::DiceRoll;
-    G.PlayedDevCard = false;
+    // G.PlayedDevCard = false;
 }
 
 /* -----------------------
@@ -450,21 +487,21 @@ int main() {
             case TurnPhase::ResourceDistribution:
                 HandleResourceDistribution();
                 break;
-            case TurnPhase::ResourceThrow:
-                HandleResourceThrow();
-                break;
+            // case TurnPhase::ResourceThrow:
+            //     HandleResourceThrow();
+            //     break;
             case TurnPhase::RobberResolve:
                 HandleRobberResolve(evt);
                 break;
             case TurnPhase::TurnStart:
                 HandleTurnStart(evt);
                 break;
-            case TurnPhase::Trading:
-                HandleTrading(evt);
-                break;
-            case TurnPhase::DevCard:
-                HandleDevCard(evt);
-                break;
+            // case TurnPhase::Trading:
+            //     HandleTrading(evt);
+            //     break;
+            // case TurnPhase::DevCard:
+            //     HandleDevCard(evt);
+            //     break;
             case TurnPhase::Build:
                 HandleBuild(evt);
                 break;
