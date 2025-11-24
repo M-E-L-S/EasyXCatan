@@ -13,7 +13,7 @@ void DevCardManager::AddCard(int playerID, DevCardType card) {
     justBought[playerID].push_back(card);
 }
 
-bool DevCardManager::CanPlayCard(int playerID, DevCardType card)const{
+bool DevCardManager::CanPlayCard(int playerID, DevCardType card)const {
     // 本回合买的不能用
     for (auto c : justBought[playerID])
         if (c == card) return false;

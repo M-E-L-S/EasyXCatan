@@ -21,6 +21,11 @@ int ShowDevCardPanel(Player& player, DevCardManager& manager, DevCardPanel& pane
                 if (result >= 0 && result < DEV_CARD_COUNT) {
                     return result;
                 }
+
+                // 处理返回按钮点击 (-2)
+                if (result == -2) {
+                    return -1; // 统一返回 -1 表示取消/关闭
+                }
             }
         }
 

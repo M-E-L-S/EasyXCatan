@@ -26,4 +26,3 @@ private:
     std::vector<Player*>& players;                          // 所有玩家对象引用
     std::vector<std::vector<DevCardType>> justBought;       // 本回合买的卡，不能用
 };
-#pragma once

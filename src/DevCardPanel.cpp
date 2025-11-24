@@ -1,16 +1,23 @@
 #include "DevCardPanel.h"
+
 #include "DevCardManager.h"
 #include <graphics.h>
 #include <string>
 
-#define BTN_W 360
-#define BTN_H 600
-#define GAP   20
+#define BTN_W 110
+#define BTN_H 110
+#define GAP   225
+
+// [新增/统一] 定义一个统一的深棕色用于启用状态
+#define DEEP_BROWN RGB(160, 100, 50)
 
 DevCardPanel::DevCardPanel(int startX, int startY)
     : panelX(startX), panelY(startY),
-    confirmButton(0, 0, 80, 35, "确认", RGB(50, 200, 50)),
-    cancelButton(0, 0, 80, 35, "取消", RGB(200, 50, 50))
+    hasBackgroundLoaded(false), // [新增] 初始化
+    confirmButton(0, 0, 80, 35, "confirm", RGB(50, 200, 50)),
+    cancelButton(0, 0, 80, 35, "cancel", RGB(200, 50, 50)),
+    // [新增] 返回按钮的初始化 (初始位置不重要，后面会设置)
+    backButton(0, 0, BTN_W, BTN_H, "back", RGB(150, 150, 150))
 {
     struct CardInfo {
         DevCardType t;
@@ -20,11 +27,11 @@ DevCardPanel::DevCardPanel(int startX, int startY)
     };
 
     CardInfo infos[] = {
-        { KNIGHT,         "骑士",      RGB(200,180,80),   true },
-        { ROAD_BUILDING,  "道路建设",  RGB(180,200,80),   true },
-        { YEAR_OF_PLENTY, "丰收之年",  RGB(80,200,120),   true },
-        { MONOPOLY,       "垄断",      RGB(200,80,120),   true },
-        { VICTORY_POINT,  "胜利点",    RGB(120,120,220),  false }
+            { KNIGHT,         "USE",      RGB(195,171,140),   true },
+            { ROAD_BUILDING,  "USE",  RGB(195,171,140),   true },
+            { YEAR_OF_PLENTY, "USE",  RGB(195,171,140),   true },
+            { MONOPOLY,       "USE",     RGB(195,171,140),   true },
+            { VICTORY_POINT,  "USE",     RGB(195,171,140),  false }
     };
 
     for (int i = 0; i < 5; i++) {
@@ -49,6 +56,27 @@ DevCardPanel::DevCardPanel(int startX, int startY)
 
         cardDisplays.push_back(d);
     }
+
+    // ==========================================================
+    // [新增] 初始化返回按钮的位置和属性
+    // ==========================================================
+
+    // 现有 5 张卡牌 (i=0到4)。返回按钮放在 i=5 的位置
+    int backBtnIndex = 5;
+
+    // 临时固定在一个较小的 X 坐标，例如 1000，确保可见。
+    int backBtnX = 1300;
+
+    // Y 坐标保持与卡牌按钮对齐
+    int backBtnY = panelY + 25;
+
+    backButton.x = backBtnX;
+    backButton.y = backBtnY;
+    backButton.w = BTN_W;
+    backButton.h = BTN_H;
+    backButton.text = "Back";
+    backButton.color = RGB(100, 100, 100);
+    backButton.enabled = true;
 }
 
 void DevCardPanel::update(const Player& player, const DevCardManager& manager)
@@ -61,41 +89,24 @@ void DevCardPanel::update(const Player& player, const DevCardManager& manager)
             continue;
         }
 
-        d.useButton.enabled = (d.count > 0) && manager.CanPlayCard(player.getID(), d.type);
+        bool canPlay = (d.count > 0) && manager.CanPlayCard(player.getID(), d.type);
+        d.useButton.enabled = canPlay;
+
+        // [统一颜色] 可用时设为棕色，不可用时按钮将显示其默认的 disabled 颜色
+        if (canPlay) {
+            d.useButton.color = DEEP_BROWN;
+        }
     }
+
+    // [统一颜色] 返回按钮统一设置为棕色
+    backButton.color = DEEP_BROWN;
+    backButton.enabled = true;
 }
 
 void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manager, const Player& player)
 {
-    settextstyle(16, 0, _T("宋体"));
-    setcolor(WHITE);
-
-    std::string s = d.name + (" x" + std::to_string(d.count));
-    outtextxy(d.countX, d.countY, s.c_str());
-
     if (d.type != VICTORY_POINT && selectedCardType == (DevCardType)-1)
         d.useButton.draw();
-
-    // ----------------- 绘制总数和可用数量框 -----------------
-    int boxX = d.useButton.x;
-    int boxY = d.useButton.y + d.useButton.h + 5;
-    int boxW = d.useButton.w;
-    int boxH = 55;
-
-    setfillcolor(RGB(60, 60, 60));
-    bar(boxX, boxY, boxX + boxW, boxY + boxH);
-    setlinecolor(WHITE);
-    rectangle(boxX, boxY, boxX + boxW, boxY + boxH);
-
-    // 获取可用数量
-    int total = player.getDevCardCount(d.type);
-    int usedThisTurn = manager.getNewThisTurn(player.getID(), d.type);
-    int usable = total - usedThisTurn;
-
-    std::string info = "总数: " + std::to_string(total) + ", 可用: " + std::to_string(usable);
-    setcolor(WHITE);
-    outtextxy(boxX + 5, boxY + 5, info.c_str());
-
 }
 
 void DevCardPanel::setupConfirmButtons(int x, int y)
@@ -110,19 +121,31 @@ void DevCardPanel::draw(const DevCardManager& manager, const Player& player)
 {
     if (!visible) return;
 
+    if (hasBackgroundLoaded) {
+        putimage(0, 0, &backgroundImage);
+    }
+
     for (auto& d : cardDisplays)
         drawCard(d, manager, player);
 
+    // ==========================================================
+    // [新增] 绘制返回按钮
+    // ==========================================================
+    if (selectedCardType == (DevCardType)-1) {
+        backButton.draw();
+    }
+
+    // 绘制确认/取消浮动框
     if (selectedCardType != (DevCardType)-1) {
-        int X = panelX + 625;
-        int Y = panelY + 320;
+        int X = getwidth() / 2 - 130;
+        int Y = getheight() / 2 - 55;
 
         setfillcolor(RGB(40, 40, 40));
         bar(X, Y, X + 260, Y + 110);
 
         setcolor(WHITE);
         settextstyle(18, 0, _T("宋体"));
-        outtextxy(X + 20, Y + 15, "确定要使用这张卡？");
+        outtextxy(X + 20, Y + 15, "确认使用这张卡牌吗？");
 
         setupConfirmButtons(X + 25, Y + 55);
         confirmButton.draw();
@@ -134,6 +157,7 @@ int DevCardPanel::handleClick(int mx, int my)
 {
     if (!visible) return -1;
 
+    // 1. 如果确认框已经弹出
     if (selectedCardType != (DevCardType)-1) {
         if (confirmButton.isClicked(mx, my)) {
             DevCardType t = selectedCardType;
@@ -147,6 +171,7 @@ int DevCardPanel::handleClick(int mx, int my)
         return -1;
     }
 
+    // 2. 正常模式，检测卡牌
     for (auto& d : cardDisplays) {
         if (d.useButton.enabled && d.useButton.isClicked(mx, my)) {
             selectedCardType = d.type;
@@ -154,5 +179,23 @@ int DevCardPanel::handleClick(int mx, int my)
         }
     }
 
+    // ==========================================================
+    // [新增] 返回按钮
+    // ==========================================================
+    if (backButton.isClicked(mx, my)) {
+        return -2;  // 用户点击返回
+    }
+
     return -1;
+}
+
+// [新增] 加载背景图片实现
+void DevCardPanel::loadBackgroundImage(const char* filePath, int optionalWidth, int optionalHeight) {
+    if (optionalWidth > 0 && optionalHeight > 0) {
+        loadimage(&backgroundImage, filePath, optionalWidth, optionalHeight);
+    }
+    else {
+        loadimage(&backgroundImage, filePath);
+    }
+    hasBackgroundLoaded = true;
 }

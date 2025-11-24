@@ -9,23 +9,61 @@ struct Button {
     COLORREF color;     // 按钮颜色
     bool enabled;       // 按钮是否可点击 (用于 "灰显")
 
-    Button() 
+    Button()
         :x(0), y(0), w(0), h(0), text(""), color(RGB(0, 0, 0)), enabled(false)
-    {}
+    {
+    }
 
     Button(int x, int y, int w, int h, const std::string& text, COLORREF color) :
         x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {
     }
 
+    // --- 新增：按钮贴图 ---
+    IMAGE img;
+    bool hasImage = false;
+    
+    // 新增：设置按钮图片
+    bool setImage(const std::string& imgPath) {
+        if (loadimage(&img, imgPath.c_str()) == 0) {
+            hasImage = true;
+            return true;
+        }
+        hasImage = false;
+        return false;
+    }
+
     // 绘制按钮
     void draw() const {
+
+        // 优先绘制图片按钮
+        if (hasImage) {
+            // 如果启用：正常绘制
+            // 如果禁用：绘制灰色遮罩
+            putimage(x, y, &img);
+
+            if (!enabled) {
+                // 灰色半透明遮罩
+                setfillcolor(RGB(80, 80, 80));
+                setbkmode(OPAQUE);
+                for (int i = 0; i < 60; i++) { // 简易透明遮罩
+                    line(x, y + i, x + w, y + i);
+                }
+            }
+            return;
+        }
+
+        // 定义圆角半径
+        const int CORNER_RADIUS = 25;
+
         // 设置填充色 (根据是否启用)
         setfillcolor(enabled ? color : RGB(128, 128, 128));
-        solidrectangle(x, y, x + w, y + h);
+        // 使用 fillroundrect 绘制填充的圆角矩形
+        fillroundrect(x, y, x + w, y + h, CORNER_RADIUS, CORNER_RADIUS);
 
         // 绘制边框
         setlinecolor(RGB(128, 128, 128));
-        rectangle(x, y, x + w, y + h);
+        // 使用 roundrect 绘制圆角边框
+        roundrect(x, y, x + w, y + h, CORNER_RADIUS, CORNER_RADIUS);
 
         // 绘制文字 (居中)
         settextcolor(enabled ? BLACK : DARKGRAY);
