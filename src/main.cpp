@@ -406,7 +406,7 @@ void HandleTurnStart(const MouseEvent &evt) {
         const bool panel = UI_SwitchToPlayerPanel(evt);
 
         if (panel){
-            const auto act = PlaterPanel(G.currentPlayer, G.diceRoll, Map_GetTradeOption(G.currentPlayer));
+            const auto act = PlaterPanel(G.currentPlayer, Map_GetTradeOption(G.currentPlayer));
             switch (act){
                 case ActionType::BuildRoad:
                     G.building = BuildType::Road;
