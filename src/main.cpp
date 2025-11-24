@@ -72,7 +72,7 @@ extern void PlayerInit(int playerId);
 // extern void Users_RegisterPlayer(const string &name, int id);
 // extern void Users_Draw(int playerId);
 // 主接口
-extern ActionType PlaterPanel(int playerId, int DiceRow, vector<bool> tradeOption);
+extern ActionType PlaterPanel(int playerId, vector<bool> tradeOption);
 // 资源管理
 extern void Resources_Add(int playerId, vector<pair<ResourceType, int>>);
 // extern void Resources_Dec(int playerId, ResourceType type, int amount);
