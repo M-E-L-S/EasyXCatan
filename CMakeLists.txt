@@ -11,6 +11,7 @@ add_executable(EasyX_Project src/main.cpp
         include/BankLoop.h
         include/HarborPanel.h
         src/HarborPanel.cpp
-        include/HarborLoop.h)
+        include/HarborLoop.h
+        include/ImageWindow.h)
 
 target_link_libraries(EasyX_Project libeasyx.a)

@@ -163,8 +163,10 @@ void BankPanel::draw(const Player& player, int mouseX, int mouseY) {
 
         // 状态效果
         if (!canAfford) {
-            setfillcolor(0xAA000000); // 置灰
-            solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+            setlinecolor(RED);
+            setlinestyle(PS_SOLID, 3);
+            line(xGive, giveY, xGive + ICON_SIZE, giveY + ICON_SIZE);
+            line(xGive + ICON_SIZE, giveY, xGive, giveY + ICON_SIZE);
         }
         else {
             if (hoverGive) {
