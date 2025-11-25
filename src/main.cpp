@@ -80,7 +80,7 @@ extern void Resources_Add(int playerId, vector<pair<ResourceType, int>>);
 // extern void Users_PlayDevCardUI();
 // extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
 // 分数管理(胜利判定)
-extern bool Score_CheckVictory(int playerId, int LongestRoadScore);
+extern int Score_CheckVictory(int playerId, int LongestRoadScore);
 // // 资源卡数量检测（amount）
 // extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
@@ -90,6 +90,8 @@ extern void Resources_Discard(int playerId, int victim); //玩家抽资源
 // extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
 // 最多的骑士特判
 extern int Users_CheckMostKnight();
+// 获取当前玩家昵称
+extern string Users_GetPlayerName(int playerId);
 //
 // // ----- 交易组 -----
 // extern void Trade_Draw(int playerId);
@@ -102,12 +104,12 @@ extern int Users_CheckMostKnight();
 
 // ----- UI -----
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
-void UI_DrawHUD(TurnPhase phase);
+void UI_DrawHUD();
 void UI_DiceRowing(int d1, int d2);
-void UI_ShowWinner();
+bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
 int UI_ChooseID(vector<int> ids);
 //ResourceType UI_ChooseResource();
-bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
+void UI_ShowWinner();
 
 // 获取鼠标事件
 MouseEvent PollMouseEvent() {
@@ -136,6 +138,9 @@ struct GameState {
     bool gameRunning = true;
     unsigned int rngSeed = (unsigned int)time(nullptr);
     int victoryPlayerId = -1;
+    int screenWidth = 2560;
+    int screenHeight = 1600;
+    IMAGE LR, MK;
 } G;
 
 /* -----------------------
@@ -160,6 +165,12 @@ void SetupGame(int numPlayers, unsigned int seed) {
 
 // 开局放置阶段（村庄+道路两轮）
 void HandlePreGamePlacement(const MouseEvent& evt) {
+    cleardevice();
+    Map_Draw();
+    //Users_Draw(G.currentPlayer);
+    UI_DrawHUD();
+    FlushBatchDraw();
+
     bool success =  false;
     if (G.isSettlement){
         Map_HandleBuildRequest(BuildType::Settlement, G.currentPlayer, true);
@@ -198,16 +209,16 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
             }
         }
     }
-
-    cleardevice();
-    Map_Draw();
-    //Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
 }
 
 // 掷骰子阶段
 void HandleDiceRoll(const MouseEvent &evt){
+    cleardevice();
+    Map_Draw();
+    //Users_Draw(G.currentPlayer);
+    UI_DrawHUD();
+    FlushBatchDraw();
+
     if (evt.leftDown) {
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
@@ -221,12 +232,6 @@ void HandleDiceRoll(const MouseEvent &evt){
             G.phase = TurnPhase::ResourceDistribution;
         }
     }
-
-    cleardevice();
-    Map_Draw();
-    //Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
 }
 
 // 资源分配阶段
@@ -275,6 +280,12 @@ void HandleResourceDistribution() {
 
 // 强盗处理
 void HandleRobberResolve(const MouseEvent &evt) {
+    cleardevice();
+    Map_Draw();
+    //Users_Draw(G.currentPlayer);
+    UI_DrawHUD();
+    FlushBatchDraw();
+
     Map_MoveRobber();
     if (evt.leftDown) {
         const auto victims = Map_MoveRobber(evt.x, evt.y);
@@ -307,15 +318,15 @@ void HandleRobberResolve(const MouseEvent &evt) {
             G.phase = TurnPhase::TurnStart;
         }
     }
-
-    cleardevice();
-    Map_Draw();
-    //Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
 }
 
 void HandleBuild(const MouseEvent &evt){
+    cleardevice();
+    Map_Draw();
+    //Users_Draw(G.currentPlayer);
+    UI_DrawHUD();
+    FlushBatchDraw();
+
     auto building = G.building;
     if (building == BuildType::DoubleRoad){
         building = BuildType::Road;
@@ -332,12 +343,6 @@ void HandleBuild(const MouseEvent &evt){
             }
         }
     }
-
-    cleardevice();
-    Map_Draw();
-    //Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
 }
 
 // void HandleTrading(const MouseEvent &evt){
@@ -402,6 +407,12 @@ void HandleBuild(const MouseEvent &evt){
 
 // 玩家回合（玩家可以交易/购买/建造）
 void HandleTurnStart(const MouseEvent &evt) {
+    cleardevice();
+    Map_Draw();
+    //Users_Draw(G.currentPlayer);
+    UI_DrawHUD();
+    FlushBatchDraw();
+
     if (evt.leftDown){
         const bool panel = UI_SwitchToPlayerPanel(evt);
 
@@ -439,12 +450,6 @@ void HandleTurnStart(const MouseEvent &evt) {
         //     G.phase = act;
         // }
     }
-
-    cleardevice();
-    Map_Draw();
-    //Users_Draw(G.currentPlayer);
-    UI_DrawHUD(G.phase);
-    FlushBatchDraw();
 }
 
 // 回合结束
@@ -454,7 +459,7 @@ void HandleTurnEnd() {
     if (G.currentPlayer == Map_CheckLongestRoad()){
         LRS = 2;
     }
-    if (Score_CheckVictory(G.currentPlayer, LRS)) {
+    if (Score_CheckVictory(G.currentPlayer, LRS) == 10) {
         G.phase = TurnPhase::GameEnd;
         G.victoryPlayerId = G.currentPlayer;
     }
@@ -467,10 +472,15 @@ void HandleTurnEnd() {
     主循环
     ----------------------- */
 int main() {
-    initgraph(1024, 768);
+    G.screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    G.screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    initgraph(G.screenWidth, G.screenHeight);
     srand((int)time(nullptr));
     BeginBatchDraw();
     SetupGame(4, (int)time(nullptr));
+
+    loadimage(&G.LR, "resources/image/LR.png", G.screenWidth / 10, G.screenHeight / 10);
+    loadimage(&G.MK, "resources/image/MK.png", G.screenWidth / 10, G.screenHeight / 10);
 
     while (G.gameRunning) {
         MouseEvent evt = PollMouseEvent();
@@ -524,4 +534,92 @@ int main() {
     _getch();
     closegraph();
     return 0;
+}
+
+static string utf8_to_ansi(const std::string &utf8) {
+    if (utf8.empty()) return std::string();
+    // 先从 UTF-8 转为宽字符串
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, NULL, 0);
+    if (wlen == 0) return std::string();
+    std::wstring wstr;
+    wstr.resize(wlen);
+    MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wstr[0], wlen);
+
+    // 再从宽字符串转为 ANSI（CP_ACP）
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    if (len == 0) return std::string();
+    std::string ans;
+    ans.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ans[0], len, NULL, NULL);
+    // 去掉末尾的 '\0'（WideCharToMultiByte 返回的长度包含终止符）
+    if (!ans.empty() && ans.back() == '\0') ans.pop_back();
+    return ans;
+}
+
+void UI_PhaseText(const string text, int r, int g, int b){
+    settextcolor(RGB(r,g,b));
+    int fontHeight = G.screenHeight / 15;
+    string fontNameAnsi = utf8_to_ansi("方正姚体");
+    settextstyle(fontHeight, 0, fontNameAnsi.c_str(), 0, 0, FW_BOLD, false, false,  false);
+    setbkmode(TRANSPARENT);
+
+    string textAnsi = utf8_to_ansi(text);
+    outtextxy(G.screenWidth / 50, G.screenHeight / 50, textAnsi.c_str());
+}
+
+void UI_ScoreBoard(){
+    string scoreText = "得分！";
+    int LRS = 0;
+    bool MKS = Users_CheckMostKnight() == G.currentPlayer;
+    if (Map_CheckLongestRoad() == G.currentPlayer) LRS = 2;
+    int score = Score_CheckVictory(G.currentPlayer, LRS);
+
+    settextcolor(WHITE);
+    int fontHeight = G.screenHeight / 20;
+    string fontNameAnsi = utf8_to_ansi("华文新魏");
+    settextstyle(fontHeight, 0, fontNameAnsi.c_str(), 0, 0, 0, false, false,  false);
+    setbkmode(TRANSPARENT);
+    string scoreTextAnsi = utf8_to_ansi(scoreText);
+    int x = G.screenWidth - G.screenWidth / 50 - fontHeight * 5;
+    outtextxy(x, G.screenHeight / 25, scoreTextAnsi.c_str());
+
+    settextcolor(RGB(94,147,255));
+    fontHeight = G.screenHeight / 15;
+    fontNameAnsi = utf8_to_ansi("方正姚体");
+    settextstyle(fontHeight, 0, fontNameAnsi.c_str(), 0, 0, FW_BOLD, false, false,  false);
+    scoreTextAnsi = utf8_to_ansi(to_string(score));
+    outtextxy(G.screenWidth - G.screenWidth / 50 - fontHeight, G.screenHeight / 50, scoreTextAnsi.c_str());
+
+    if (LRS){
+        putimage(x, G.screenHeight / 25 + fontHeight, &G.LR);
+    }
+    if (MKS){
+        putimage(G.screenWidth - G.screenWidth / 50 - fontHeight * 2, G.screenHeight / 25 + fontHeight, &G.MK);
+    }
+}
+
+void UI_PlayerName(){
+    string nameText = Users_GetPlayerName(G.currentPlayer);
+    nameText += "的回合";
+    settextcolor(RGB(232,232,232));
+    int fontHeight = G.screenHeight / 20;
+    string fontNameAnsi = utf8_to_ansi("华文新魏");
+    settextstyle(fontHeight, 0, fontNameAnsi.c_str(), 0, 0, FW_BOLD, false, false,  false);
+    string nameTextAnsi = utf8_to_ansi(nameText);
+    outtextxy((G.screenWidth - textwidth(nameTextAnsi.c_str())) / 2, G.screenHeight - fontHeight * 2 - G.screenHeight / 50, nameTextAnsi.c_str());
+}
+
+void UI_DrawHUD(){
+    switch (G.phase){
+        case TurnPhase::PreGameSetup_FirstPlacement:
+        case TurnPhase::PreGameSetup_SecondPlacement:
+            UI_PhaseText("入场阶段", 108,214,184);
+            UI_ScoreBoard();
+            UI_PlayerName();
+            break;
+        case TurnPhase::DiceRoll:
+            UI_PhaseText("投骰子", 108,214,184);
+            UI_ScoreBoard();
+            UI_PlayerName();
+    }
 }
