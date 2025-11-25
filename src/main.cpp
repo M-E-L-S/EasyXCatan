@@ -106,7 +106,7 @@ extern string Users_GetPlayerName(int playerId);
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
 void UI_DrawHUD();
 void UI_DiceRowing(int d1, int d2);
-bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
+bool UI_SwitchToPlayerPanel(MouseEvent &evt);
 int UI_ChooseID(vector<int> ids);
 //ResourceType UI_ChooseResource();
 void UI_ShowWinner();
@@ -118,7 +118,8 @@ MouseEvent PollMouseEvent() {
         MOUSEMSG m = GetMouseMsg();
         evt.x = m.x;
         evt.y = m.y;
-        evt.leftDown  = m.uMsg == WM_LBUTTONDOWN;
+        evt.hasEvent = true;
+        evt.leftDown  |= m.uMsg == WM_LBUTTONDOWN;
     }
     return evt;
 }
@@ -406,45 +407,41 @@ void HandleBuild(const MouseEvent &evt){
 // }
 
 // 玩家回合（玩家可以交易/购买/建造）
-void HandleTurnStart(const MouseEvent &evt) {
+void HandleTurnStart(MouseEvent & evt) {
     cleardevice();
     Map_Draw();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
 
-    if (evt.leftDown){
-        const bool panel = UI_SwitchToPlayerPanel(evt);
-
-        if (panel){
-            const auto act = PlaterPanel(G.currentPlayer, Map_GetTradeOption(G.currentPlayer));
-            switch (act){
-                case ActionType::BuildRoad:
-                    G.building = BuildType::Road;
-                    G.phase = TurnPhase::Build;
-                    break;
-                case ActionType::BuildSettlement:
-                    G.building = BuildType::Settlement;
-                    G.phase = TurnPhase::Build;
-                    break;
-                case ActionType::BuildCity:
-                    G.building = BuildType::City;
-                    G.phase = TurnPhase::Build;
-                    break;
-                case ActionType::RoadBuilding:
-                    G.building = BuildType::DoubleRoad;
-                    G.phase = TurnPhase::Build;
-                    break;
-                case ActionType::Knight:
-                    G.phase = TurnPhase::RobberResolve;
-                    break;
-                case ActionType::EndTurn:
-                    G.phase = TurnPhase::TurnEnd;
-                    break;
-                default:
-                    G.phase = TurnPhase::TurnStart;
-                    break;
-            }
+    if (UI_SwitchToPlayerPanel(evt)){
+        const auto act = PlaterPanel(G.currentPlayer, Map_GetTradeOption(G.currentPlayer));
+        switch (act){
+            case ActionType::BuildRoad:
+                G.building = BuildType::Road;
+                G.phase = TurnPhase::Build;
+                break;
+            case ActionType::BuildSettlement:
+                G.building = BuildType::Settlement;
+                G.phase = TurnPhase::Build;
+                break;
+            case ActionType::BuildCity:
+                G.building = BuildType::City;
+                G.phase = TurnPhase::Build;
+                break;
+            case ActionType::RoadBuilding:
+                G.building = BuildType::DoubleRoad;
+                G.phase = TurnPhase::Build;
+                break;
+            case ActionType::Knight:
+                G.phase = TurnPhase::RobberResolve;
+                break;
+            case ActionType::EndTurn:
+                G.phase = TurnPhase::TurnEnd;
+                break;
+            default:
+                G.phase = TurnPhase::TurnStart;
+                break;
         }
         // if (act != TurnPhase::None){
         //     G.phase = act;
@@ -504,7 +501,7 @@ int main() {
                 HandleRobberResolve(evt);
                 break;
             case TurnPhase::TurnStart:
-                HandleTurnStart(evt);
+                HandleTurnStart();
                 break;
             // case TurnPhase::Trading:
             //     HandleTrading(evt);
@@ -614,12 +611,142 @@ void UI_DrawHUD(){
         case TurnPhase::PreGameSetup_FirstPlacement:
         case TurnPhase::PreGameSetup_SecondPlacement:
             UI_PhaseText("入场阶段", 108,214,184);
-            UI_ScoreBoard();
-            UI_PlayerName();
             break;
         case TurnPhase::DiceRoll:
-            UI_PhaseText("投骰子", 108,214,184);
-            UI_ScoreBoard();
-            UI_PlayerName();
+            UI_PhaseText("投骰子", 66,126,252);
+            break;
+        case TurnPhase::RobberResolve:
+            UI_PhaseText("强盗来袭！", 192,0,0);
+            break;
+        case TurnPhase::Build:
+            UI_PhaseText("建造阶段", 108,214,184);
+            break;
+        case TurnPhase::TurnStart:
+            UI_PhaseText("回合中……",235,184,36);
+            break;
+        default:
+            UI_PhaseText("……",235,184,36);
+            break;
     }
+    UI_ScoreBoard();
+    UI_PlayerName();
+}
+
+struct UI_Button {
+    int id;
+    int x, y, w, h;
+    bool isHover;
+    string text;
+};
+
+int UI_ChooseID(vector<int> ids){
+    const int BTN_W = G.screenWidth / 10;
+    const int BTN_H = G.screenHeight / 15;
+    const int BTN_X = G.screenWidth / 50;
+    const int START_Y = G.screenHeight / 5;
+    const int GAP = G.screenHeight / 75;
+
+    const COLORREF COLOR_NORMAL = RGB(219, 195, 147);
+    const COLORREF COLOR_HOVER  = RGB(255, 200, 80);
+    const COLORREF COLOR_BORDER = RGB(50, 50, 50);
+    const COLORREF COLOR_TEXT   = BLACK;
+
+    vector<UI_Button> buttons;
+    for (int i = 0; i < ids.size(); i++){
+        UI_Button btn;
+        btn.id = ids[i];
+        btn.x = BTN_X;
+        btn.y = START_Y + i * (BTN_H + GAP);
+        btn.w = BTN_W;
+        btn.h = BTN_H;
+        btn.isHover = false;
+        btn.text = utf8_to_ansi(Users_GetPlayerName(ids[i]));
+        buttons.push_back(btn);
+    }
+
+    setbkmode(TRANSPARENT);
+    settextcolor(RED);
+    settextstyle(30, 0, utf8_to_ansi("微软雅黑").c_str());
+    outtextxy(BTN_X, START_Y - 50, utf8_to_ansi("选择抢夺对象：").c_str());
+
+    int choice = 0;
+    int x = 0, y = 0;
+
+    while (!choice){
+        MouseEvent msg = PollMouseEvent();
+        if (msg.hasEvent){
+            x = msg.x;
+            y = msg.y;
+        }
+        for (auto& btn : buttons){
+            btn.isHover = x >= btn.x && x < btn.x + btn.w && y >= btn.y && y < btn.y + btn.h;
+            if (btn.isHover && msg.leftDown){
+                choice = btn.id;
+                break;
+            }
+        }
+
+        for (const auto& btn : buttons){
+            if (btn.isHover){
+                setfillcolor(COLOR_HOVER);
+            }
+            else{
+                setfillcolor(COLOR_NORMAL);
+            }
+            setlinecolor(COLOR_BORDER);
+            setlinestyle(PS_SOLID, 2);
+
+            fillroundrect(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, 10, 10);
+
+            settextcolor(COLOR_TEXT);
+            settextstyle(24, 0, utf8_to_ansi("华文新魏").c_str());
+            int tw = textwidth(btn.text.c_str());
+            int th = textheight(btn.text.c_str());
+            int tx = btn.x + (btn.w - tw) / 2;
+            int ty = btn.y + (btn.h - th) / 2;
+            outtextxy(tx, ty, btn.text.c_str());
+        }
+
+        FlushBatchDraw();
+        Sleep(30);
+    }
+    return choice;
+}
+
+bool UI_SwitchToPlayerPanel(MouseEvent & evt){
+    const int BTN_W = G.screenWidth / 8;
+    const int BTN_H = G.screenHeight / 10;
+    const int MARGIN = 50;
+
+    int x = G.screenWidth - BTN_W * 1.25 - MARGIN;
+    int y = G.screenHeight - BTN_H * 1.5 - MARGIN;
+
+    static int mx = 0, my = 0;
+
+    if (evt.hasEvent){
+        mx = evt.x;
+        my = evt.y;
+    }
+    bool isHover = (mx >= x && mx <= x + BTN_W && my >= y && my <= y + BTN_H);
+
+    if (isHover)
+        setfillcolor(RGB(255, 200, 80));
+    else
+        setfillcolor(RGB(219, 195, 147));
+
+    setlinecolor(BLACK);
+    setlinestyle(PS_SOLID, 2);
+
+    fillroundrect(x, y, x + BTN_W, y + BTN_H, 15, 15);
+
+    setbkmode(TRANSPARENT);
+    settextcolor(BLACK);
+    settextstyle(G.screenHeight / 25, 0, utf8_to_ansi("华文新魏").c_str());
+
+    string text = utf8_to_ansi("个人界面");
+    int tx = x + (BTN_W - textwidth(text.c_str())) / 2;
+    int ty = y + (BTN_H - textheight(text.c_str())) / 2;
+    outtextxy(tx, ty, text.c_str());
+
+    return isHover && evt.leftDown;
 }
