@@ -5,9 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable(EasyX_Project
-        src/main.cpp
+add_executable(EasyX_Project src/try.cpp
         src/map.cpp
-        include/map.h)
+        include/map.h
+)
 
-target_link_libraries(EasyX_Project libeasyx.a)
+target_link_libraries(EasyX_Project libeasyx.a easyx winmm MSIMG32)

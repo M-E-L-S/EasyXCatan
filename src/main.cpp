@@ -41,21 +41,22 @@ enum class TurnPhase {
     //DevCard,
     Build,
     RobberResolve,
+    RobberAnimate,
     TurnEnd,
     GameEnd,
     None
 };
 
-// 资源产出(ID, type, amount)
-extern vector<pair<ResourceType, int>> Map_PreResources(int playerId);
+int screenHeight = 0;
+int screenWidth = 0;
+
 // 玩家建设
 extern void Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
 extern bool Map_HandleBuildRequest(BuildType type, int playerId, int mouseX, int mouseY, bool isPre = false);
-// 长路特判(ID)
-extern int Map_CheckLongestRoad();
 // 强盗移动(ID List)
 extern void Map_MoveRobber();
-extern vector<int> Map_MoveRobber(int mouseX, int mouseY);
+extern pair<bool, vector<int>> Map_MoveRobber(int mouseX, int mouseY);
+extern bool Map_MoveRobberAnimate();
 
 // ----- 用户组 -----
 // 玩家初始化
@@ -96,7 +97,7 @@ extern string Users_GetPlayerName(int playerId);
 // ----- UI -----
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
 void UI_DrawHUD();
-void UI_DiceRowing(int d1, int d2);
+void UI_DiceRowing(const int d1, const int d2);
 bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
 int UI_ChooseID(const vector<int>& ids);
 //ResourceType UI_ChooseResource();
@@ -127,12 +128,14 @@ struct GameState {
     //bool PlayedDevCard = false;
     //bool isFree = false;
     BuildType building = BuildType::None;
+    vector<int> victims;
     bool gameRunning = true;
     unsigned int rngSeed = (unsigned int)time(nullptr);
     int victoryPlayerId = -1;
     int screenWidth = 2560;
     int screenHeight = 1600;
     IMAGE LR, MK;
+    IMAGE dice[21];
     unique_ptr<Map> map;
 } G;
 
@@ -181,7 +184,7 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
     if (success){
         if (G.isSettlement){
             G.isSettlement = false;
-            const auto res = Map_PreResources(G.currentPlayer);
+            const auto res = G.map->getPlayerResources(G.currentPlayer);
             Resources_Add(G.currentPlayer, res);
         } else{
             if (G.phase == TurnPhase::PreGameSetup_FirstPlacement) {
@@ -282,35 +285,26 @@ void HandleRobberResolve(const MouseEvent &evt) {
 
     Map_MoveRobber();
     if (evt.leftDown) {
-        const auto victims = Map_MoveRobber(evt.x, evt.y);
-        if (!victims.empty()){
-            const int victim = UI_ChooseID(victims);
-
-            Resources_Discard(G.currentPlayer,  victim);
-            // while (true){
-            //     Resources_DoDiscard(victim);
-            //     MouseEvent event = PollMouseEvent();
-            //
-            //     if (event.leftDown){
-            //         auto res = Resources_DoDiscard(victim, event.x, event.y);
-            //         if (res != ResourceType::None){
-            //             Resources_Dec(victim, res, 1);
-            //             Resources_Add(G.currentPlayer, {{res, 1}});
-            //             break;
-            //         }
-            //     }
-            //
-            //     cleardevice();
-            //     Map_Draw();
-            //     Users_Draw(G.currentPlayer);
-            //     UI_DrawHUD(G.phase);
-            //     FlushBatchDraw();
-            //
-            //     Sleep(30);
-            // }
-
-            G.phase = TurnPhase::TurnStart;
+        const auto [ok, victims] = Map_MoveRobber(evt.x, evt.y);
+        if (ok){
+            G.phase  = TurnPhase::RobberAnimate;
+            G.victims = victims;
         }
+    }
+}
+
+void HandleRobberAnimate(){
+    cleardevice();
+    G.map->drawAll();
+    if (Map_MoveRobberAnimate()){
+        UI_DrawHUD();
+        FlushBatchDraw();
+        const int victim = UI_ChooseID(G.victims);
+        Resources_Discard(G.currentPlayer,  victim);
+        G.phase = TurnPhase::TurnStart;
+    }else{
+        UI_DrawHUD();
+        FlushBatchDraw();
     }
 }
 
@@ -446,7 +440,7 @@ void HandleTurnStart(const MouseEvent & evt) {
 void HandleTurnEnd() {
     // 检查胜利
     int LRS = 0;
-    if (G.currentPlayer == Map_CheckLongestRoad()){
+    if (G.currentPlayer == G.map->longRoadOwner()){
         LRS = 2;
     }
     if (Score_CheckVictory(G.currentPlayer, LRS) == 10) {
@@ -464,6 +458,8 @@ void HandleTurnEnd() {
 int main() {
     G.screenWidth = GetSystemMetrics(SM_CXSCREEN);
     G.screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    screenHeight = G.screenHeight;
+    screenWidth = G.screenWidth;
     initgraph(G.screenWidth, G.screenHeight);
     srand((unsigned int)time(nullptr));
     BeginBatchDraw();
@@ -472,6 +468,12 @@ int main() {
     loadimage(&G.MK, "resources/image/MK.png", G.screenWidth / 10, G.screenHeight / 10);
     IMAGE bk;
     loadimage(&bk, "resources/image/bk.png", G.screenWidth, G.screenHeight);
+    char path[100] = {0};
+    for(int i = 0; i < 21; i++) {
+        sprintf(path, "resources/image/dice%d.png", i + 1);
+        loadimage(G.dice + i, path, 100, 100);
+    }
+
     SetupGame(4, (unsigned int)time(nullptr), bk);
 
     while (G.gameRunning) {
@@ -494,6 +496,9 @@ int main() {
             //     break;
             case TurnPhase::RobberResolve:
                 HandleRobberResolve(evt);
+                break;
+            case TurnPhase::RobberAnimate:
+                HandleRobberAnimate();
                 break;
             case TurnPhase::TurnStart:
                 HandleTurnStart(evt);
@@ -563,7 +568,7 @@ void UI_ScoreBoard(){
     string scoreText = "得分！";
     int LRS = 0;
     bool MKS = Users_CheckMostKnight() == G.currentPlayer;
-    if (Map_CheckLongestRoad() == G.currentPlayer) LRS = 2;
+    if (G.map->longRoadOwner() == G.currentPlayer) LRS = 2;
     int score = Score_CheckVictory(G.currentPlayer, LRS);
 
     settextcolor(WHITE);
@@ -609,6 +614,8 @@ void UI_DrawHUD(){
             break;
         case TurnPhase::DiceRoll:
             UI_PhaseText("投骰子", 66,126,252);
+            putimage((G.screenWidth - 300) / 2, (G.screenHeight - 100) / 2, &G.dice[20]);
+            putimage((G.screenWidth - 300) / 2 + 200, (G.screenHeight - 100) / 2, &G.dice[20]);
             break;
         case TurnPhase::RobberResolve:
             UI_PhaseText("强盗来袭！", 192,0,0);
@@ -743,4 +750,34 @@ bool UI_SwitchToPlayerPanel(const MouseEvent & evt){
     outtextxy(tx, ty, text.c_str());
 
     return isHover && evt.leftDown;
+}
+
+void UI_DiceRowing(const int d1, const int d2){
+    int currentFrame = 0;
+    const int x = (G.screenWidth - 300) / 2;
+    const int y = (G.screenHeight - 100) / 2;
+    while(currentFrame <= 29) {
+        const int t = currentFrame % 15;
+        cleardevice();
+        G.map->drawAll();
+        UI_DrawHUD();
+        putimage(x, y, G.dice + t);
+        putimage(x + 200, y, G.dice + t);
+        FlushBatchDraw();
+
+        ++currentFrame;
+        Sleep(30);
+    }
+    while (true){
+        const MouseEvent evt = PollMouseEvent();
+        if (evt.leftDown) break;
+        cleardevice();
+        G.map->drawAll();
+        UI_DrawHUD();
+        putimage(x, y, G.dice + 14 + d1);
+        putimage(x + 200, y, G.dice + 14 + d2);
+        FlushBatchDraw();
+
+        Sleep(30);
+    }
 }
