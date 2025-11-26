@@ -2,6 +2,8 @@
 #pragma once
 #include <graphics.h>
 #include <string>
+#include <windows.h> // 【新增】用于 PlaySound
+#pragma comment(lib, "winmm.lib")
 
 // 一个简单的可复用按钮结构体
 struct Button {
@@ -11,10 +13,12 @@ struct Button {
     bool enabled;       // 按钮是否可点击 (用于 "灰显")
 
     Button()
-        :x(0), y(0), w(0), h(0), text(""), color(RGB(0, 0, 0)), enabled(false) {}
+        :x(0), y(0), w(0), h(0), text(""), color(RGB(0, 0, 0)), enabled(false) {
+    }
 
     Button(int x, int y, int w, int h, const std::string& text, COLORREF color) :
-        x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {}
+        x(x), y(y), w(w), h(h), text(text), color(color), enabled(true) {
+    }
 
     // 绘制按钮
     void draw() const {
@@ -50,6 +54,18 @@ struct Button {
 
     // 检查是否被点击 (必须是启用的)
     bool isClicked(int mouseX, int mouseY) const {
-        return enabled && (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+
+        bool clicked = enabled && (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+
+        // 【新增音效逻辑】
+        if (clicked) {
+            // PlaySound 播放音效，注意文件名和路径
+            // SND_FILENAME: 标志这是一个文件名
+            // SND_ASYNC: 异步播放，不阻塞主程序
+            PlaySound(_T("music/click.wav"), NULL, SND_FILENAME | SND_ASYNC);
+            // 如果您的音效文件不在根目录，请确保路径正确，例如 "music/click.wav"
+        }
+
+        return clicked;
     }
 };

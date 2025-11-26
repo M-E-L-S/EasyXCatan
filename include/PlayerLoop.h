@@ -4,10 +4,12 @@
 #include "PlayerPanel.h"
 #include "Common.h"
 #include "TextWindow.h"
+#include "imageWindow.h"
 #include "Random.h"
 #include "DevCardLoop.h"
 #include "BankLoop.h"
-
+#include "HarborLoop.h"
+#include "BGMusic.h"
 
 // 转换函数：将 DevCardType 转换为字符串
 std::string DevCardTypeToString(DevCardType card) {
@@ -32,11 +34,11 @@ std::string DevCardTypeToString(DevCardType card) {
  * @param state: 当前游戏状态（引用，用于切换到“建设中”状态）
  * @param lastDiceResult: 上次掷骰子点数，用于显示
  */
-void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
+enum class ActionType PlayerLoop(Player& player,GameState state, int lastDiceResult) {
 
     //  初始化面板
     PlayerPanel panel(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
-
+    MusicManager Music;
     // 加载资源图片 (路径请根据你的实际项目结构调整)
     const char* resPaths[RESOURCE_COUNT] = {
         "./assets/wood.jpg",
@@ -59,13 +61,14 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
         cleardevice();
 
         // 调用 PlayerPanel 的绘制函数
+        Music.play(MusicType::PANEL);
         panel.draw(player, state, lastDiceResult);
 
         FlushBatchDraw();
 
         // --- 输入检测部分 ---
         ExMessage msg;
-
+        ActionType actiontype;
         while (peekmessage(&msg, EM_MOUSE)) {
             if (msg.message == WM_LBUTTONDOWN) {
 
@@ -78,7 +81,18 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                 case ButtonTypeFromPanel::TRADE_BANK:
                     // 暂时结束当前批量绘图，以免子循环冲突
                     EndBatchDraw();
+                    Music.play(MusicType::BANK);
                     EnterBankMode(player);
+                    Music.play(MusicType::PANEL);
+                    BeginBatchDraw();
+                    break;
+
+                case ButtonTypeFromPanel::TRADE_HARBOR:
+                    // 暂时结束当前批量绘图，以免子循环冲突
+                    EndBatchDraw();
+                    Music.play(MusicType::HARBOR);
+                    EnterHarborMode(player);
+                    Music.play(MusicType::PANEL);
                     BeginBatchDraw();
                     break;
 
@@ -97,7 +111,9 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                     break;
                 case ButtonTypeFromPanel::USE_DEV_CARD:
                     EndBatchDraw();
-                    DevCardLoop(player);
+                    actiontype=DevCardLoop(player);
+                    if(actiontype==ActionType::Knight||actiontype==ActionType::RoadBuilding)
+                        return actiontype;
                     BeginBatchDraw();
                     break;
 
@@ -105,11 +121,23 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                 case ButtonTypeFromPanel::SWITCH_TO_MAP:
                     // 直接退出循环，返回主循环
                     state = GameState::AWAITING_SWITCH_TO_MAP;
+                    EndBatchDraw();
+					return ActionType::SwitchToMap;
                     exitLoop = true;
                     break;
 
                 case ButtonTypeFromPanel::END_TURN:
+                    if (lastDiceResult == 9) {
+                        EndBatchDraw();
+                        textWindow("You got a King Crab, every Player VP++!");
+                        BeginBatchDraw();
+                        EndBatchDraw();
+                        showImageWindow("./assets/kingcrab.jpg");
+                        BeginBatchDraw();
+                    }
                     state = GameState::END_TURN;
+                    EndBatchDraw();
+                    return ActionType::EndTurn;;
                     exitLoop = true;
                     break;
 
@@ -120,6 +148,8 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                         player.addBuilding(ROAD);
                         state = GameState::AWAITING_MAP_CLICK_FOR_ROAD;
                         exitLoop = true;
+                        EndBatchDraw();
+                        return ActionType::BuildRoad;;
                     }
                     else {
                         EndBatchDraw();
@@ -134,6 +164,8 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                         player.addBuilding(SETTLEMENT);
                         state = GameState::AWAITING_MAP_CLICK_FOR_SETTLEMENT;
                         exitLoop = true;
+                        EndBatchDraw();
+                        return ActionType::BuildSettlement;;
                     }
                     else {
                         EndBatchDraw();
@@ -149,6 +181,8 @@ void PlayerLoop(Player& player, GameState& state, int lastDiceResult) {
                         player.removeBuilding(SETTLEMENT);
                         state = GameState::AWAITING_MAP_CLICK_FOR_CITY;
                         exitLoop = true;
+                        EndBatchDraw();
+                        return ActionType::BuildCity;;
                     }
                     else {
                         EndBatchDraw();

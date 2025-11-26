@@ -14,6 +14,7 @@ Player::Player(int id, COLORREF playerColor) :
     hasLongestRoad(false),
     hasLargestArmy(false)
 {
+    hasHarbor_ = true;
     // 2. 构造函数体
     //    在这里初始化数组，或者执行更复杂的逻辑
 
@@ -211,4 +212,8 @@ void Player::addUsedKnight() {
 // 查询是否拥有最大骑士数
 bool Player::getHasLargestArmy() const {
     return hasLargestArmy;
+}
+
+bool Player::hasHarbor() const {
+    return hasHarbor_;
 }

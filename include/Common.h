@@ -5,7 +5,7 @@
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
-// 状态 : 当前显示哪个全屏 (GameController 拥有)
+//// 状态 : 当前显示哪个全屏 (GameController 拥有)
 //enum class ActiveScreen {
 //    VIEW_MAP,       // 显示全屏地图
 //    VIEW_PLAYER_PANEL,  // 显示全屏玩家面板
@@ -24,8 +24,18 @@ enum class GameState {
     // ... 其他状态
 };
 
-// GameController 会询问这个枚举
-// 来知道是哪个按钮被点击了
+// GameController 会询问这个枚举，来知道怎么与地图交互
+// 返回给主循环的动作类型
+enum class ActionType {
+    SwitchToMap, //
+    BuildRoad, //
+    BuildSettlement, //
+    BuildCity, //
+    Knight,
+    RoadBuilding,
+    EndTurn, //
+    None };
+
 enum class ButtonTypeFromPanel {
     NONE,
     BUILD_ROAD,
@@ -34,6 +44,7 @@ enum class ButtonTypeFromPanel {
     BUY_DEV_CARD,
     USE_DEV_CARD,
     TRADE_BANK,
+    TRADE_HARBOR,
     ROLL_DICE,
     END_TURN,
     SWITCH_TO_MAP,

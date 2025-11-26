@@ -28,6 +28,7 @@ public: // 外部可以访问的
     bool canAffordBuilding(BuildingType type) const;
     bool canAffordDevCard() const;
     bool hasDevCard(DevCardType type) const;
+    bool hasHarbor() const;
 
     // --- 动作 (Action) 函数 ---
     // 这些函数会修改私有数据
@@ -65,5 +66,6 @@ private: // 只有 Player 类内部能访问
     // 分数相关的特殊状态
     bool hasLongestRoad; // 拥有最长道路 (2分)
     bool hasLargestArmy; // 拥有最大军队 (2分)
+    bool hasHarbor_;
 
 };

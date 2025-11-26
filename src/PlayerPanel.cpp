@@ -62,6 +62,10 @@ PlayerPanel::PlayerPanel(int screenWidth, int screenHeight)
 
     buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Trade (Bank 4:1)", RGB(38, 111, 64)));
     buttonMap[ButtonTypeFromPanel::TRADE_BANK] = &buttons.back();
+    currentY += (BTN_H + BTN_GAP);
+
+    buttons.push_back(Button(COL3_X, currentY, BTN_W, BTN_H, "Trade (Harbor)", RGB(38, 111, 64)));
+    buttonMap[ButtonTypeFromPanel::TRADE_HARBOR] = &buttons.back();
 
     // --- 游戏流程按钮 ---
     currentY = FLOW_Y;
@@ -276,12 +280,15 @@ void PlayerPanel::drawButtons(const Player& player, GameState state) {
         if (buttonMap.count(ButtonTypeFromPanel::BUY_DEV_CARD))
             buttonMap[ButtonTypeFromPanel::BUY_DEV_CARD]->enabled = player.canAffordDevCard();
 
-        // 功能类 (总是启用)
+        // 功能类
         if (buttonMap.count(ButtonTypeFromPanel::USE_DEV_CARD))
             buttonMap[ButtonTypeFromPanel::USE_DEV_CARD]->enabled = true;
 
         if (buttonMap.count(ButtonTypeFromPanel::TRADE_BANK))
             buttonMap[ButtonTypeFromPanel::TRADE_BANK]->enabled = true;
+
+        if (buttonMap.count(ButtonTypeFromPanel::TRADE_HARBOR))
+            buttonMap[ButtonTypeFromPanel::TRADE_HARBOR]->enabled = player.hasHarbor();
 
         if (buttonMap.count(ButtonTypeFromPanel::END_TURN))
             buttonMap[ButtonTypeFromPanel::END_TURN]->enabled = true;
