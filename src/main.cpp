@@ -5,13 +5,16 @@
 #include <string>
 #include <ctime>
 #include <cassert>
+#include <memory>
+
+#include "map.h"
 
 using namespace std;
 
 /* -----------------------
     基本类型与枚举
     ----------------------- */
-enum class ResourceType { Wood, Brick, Ore, Sheep, Wheat, None };
+//enum class ResourceType { Wood, Brick, Ore, Sheep, Wheat, None };
 enum class BuildType { Road, Settlement, City, DoubleRoad, None };
 //enum class TradeType { Bank, Player, Port, None };
 //enum class DevCardType { Knight, VictoryPoint, Monopoly, RoadBuilding, YearOfPlenty, None };
@@ -43,19 +46,7 @@ enum class TurnPhase {
     None
 };
 
-/* -----------------------
-    外部接口
-    ----------------------- */
-
-// ----- 地图组 -----
-// 初始化地图
-extern void Map_Init(int seed);
-// 地图绘制
-extern void Map_Draw();
-// 玩家交易属性（4:1, 3:1, 2:1木、砖、矿、羊、麦）（7位0-6）
-extern vector<bool> Map_GetTradeOption(int playerId);
 // 资源产出(ID, type, amount)
-extern vector<vector<pair<ResourceType, int>>> Map_ProduceResources(int diceRoll);
 extern vector<pair<ResourceType, int>> Map_PreResources(int playerId);
 // 玩家建设
 extern void Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
@@ -106,8 +97,8 @@ extern string Users_GetPlayerName(int playerId);
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
 void UI_DrawHUD();
 void UI_DiceRowing(int d1, int d2);
-bool UI_SwitchToPlayerPanel(MouseEvent &evt);
-int UI_ChooseID(vector<int> ids);
+bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
+int UI_ChooseID(const vector<int>& ids);
 //ResourceType UI_ChooseResource();
 void UI_ShowWinner();
 
@@ -142,12 +133,13 @@ struct GameState {
     int screenWidth = 2560;
     int screenHeight = 1600;
     IMAGE LR, MK;
+    unique_ptr<Map> map;
 } G;
 
 /* -----------------------
     启动与资源初始化
     ----------------------- */
-void SetupGame(int numPlayers, unsigned int seed) {
+void SetupGame(int numPlayers, unsigned int seed, const IMAGE& bk) {
     G.playerCount = numPlayers;
 
     for (int i = 1; i <= numPlayers; ++i) {
@@ -157,7 +149,8 @@ void SetupGame(int numPlayers, unsigned int seed) {
     G.phase = TurnPhase::PreGameSetup_FirstPlacement;
     G.isSettlement = true;
     G.rngSeed = seed;
-    Map_Init(seed);
+    G.map = make_unique<Map>(G.rngSeed);
+    G.map->initMap(bk);
 }
 
 /* -----------------------
@@ -167,7 +160,7 @@ void SetupGame(int numPlayers, unsigned int seed) {
 // 开局放置阶段（村庄+道路两轮）
 void HandlePreGamePlacement(const MouseEvent& evt) {
     cleardevice();
-    Map_Draw();
+    G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
@@ -215,7 +208,7 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
 // 掷骰子阶段
 void HandleDiceRoll(const MouseEvent &evt){
     cleardevice();
-    Map_Draw();
+    G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
@@ -237,7 +230,7 @@ void HandleDiceRoll(const MouseEvent &evt){
 
 // 资源分配阶段
 void HandleResourceDistribution() {
-    const auto prod = Map_ProduceResources(G.diceRoll);
+    const auto prod = G.map->distributeResources(G.diceRoll);
     for (int i=1; i<=G.playerCount; ++i) {
         if (!prod[i].empty()){
             Resources_Add(i, prod[i]);
@@ -282,7 +275,7 @@ void HandleResourceDistribution() {
 // 强盗处理
 void HandleRobberResolve(const MouseEvent &evt) {
     cleardevice();
-    Map_Draw();
+    G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
@@ -323,7 +316,7 @@ void HandleRobberResolve(const MouseEvent &evt) {
 
 void HandleBuild(const MouseEvent &evt){
     cleardevice();
-    Map_Draw();
+    G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
@@ -407,15 +400,15 @@ void HandleBuild(const MouseEvent &evt){
 // }
 
 // 玩家回合（玩家可以交易/购买/建造）
-void HandleTurnStart(MouseEvent & evt) {
+void HandleTurnStart(const MouseEvent & evt) {
     cleardevice();
-    Map_Draw();
+    G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
     FlushBatchDraw();
 
     if (UI_SwitchToPlayerPanel(evt)){
-        const auto act = PlaterPanel(G.currentPlayer, Map_GetTradeOption(G.currentPlayer));
+        const auto act = PlaterPanel(G.currentPlayer, G.map->GetTradeOption(G.currentPlayer));
         switch (act){
             case ActionType::BuildRoad:
                 G.building = BuildType::Road;
@@ -472,12 +465,14 @@ int main() {
     G.screenWidth = GetSystemMetrics(SM_CXSCREEN);
     G.screenHeight = GetSystemMetrics(SM_CYSCREEN);
     initgraph(G.screenWidth, G.screenHeight);
-    srand((int)time(nullptr));
+    srand((unsigned int)time(nullptr));
     BeginBatchDraw();
-    SetupGame(4, (int)time(nullptr));
 
     loadimage(&G.LR, "resources/image/LR.png", G.screenWidth / 10, G.screenHeight / 10);
     loadimage(&G.MK, "resources/image/MK.png", G.screenWidth / 10, G.screenHeight / 10);
+    IMAGE bk;
+    loadimage(&bk, "resources/image/bk.png", G.screenWidth, G.screenHeight);
+    SetupGame(4, (unsigned int)time(nullptr), bk);
 
     while (G.gameRunning) {
         MouseEvent evt = PollMouseEvent();
@@ -501,7 +496,7 @@ int main() {
                 HandleRobberResolve(evt);
                 break;
             case TurnPhase::TurnStart:
-                HandleTurnStart();
+                HandleTurnStart(evt);
                 break;
             // case TurnPhase::Trading:
             //     HandleTrading(evt);
@@ -536,24 +531,24 @@ int main() {
 static string utf8_to_ansi(const std::string &utf8) {
     if (utf8.empty()) return std::string();
     // 先从 UTF-8 转为宽字符串
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, NULL, 0);
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
     if (wlen == 0) return std::string();
     std::wstring wstr;
     wstr.resize(wlen);
     MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wstr[0], wlen);
 
     // 再从宽字符串转为 ANSI（CP_ACP）
-    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
     if (len == 0) return std::string();
     std::string ans;
     ans.resize(len);
-    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ans[0], len, NULL, NULL);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ans[0], len, nullptr, nullptr);
     // 去掉末尾的 '\0'（WideCharToMultiByte 返回的长度包含终止符）
     if (!ans.empty() && ans.back() == '\0') ans.pop_back();
     return ans;
 }
 
-void UI_PhaseText(const string text, int r, int g, int b){
+void UI_PhaseText(const string& text, int r, int g, int b){
     settextcolor(RGB(r,g,b));
     int fontHeight = G.screenHeight / 15;
     string fontNameAnsi = utf8_to_ansi("方正姚体");
@@ -639,17 +634,16 @@ struct UI_Button {
     string text;
 };
 
-int UI_ChooseID(vector<int> ids){
+int UI_ChooseID(const vector<int>& ids){
     const int BTN_W = G.screenWidth / 10;
     const int BTN_H = G.screenHeight / 15;
     const int BTN_X = G.screenWidth / 50;
     const int START_Y = G.screenHeight / 5;
     const int GAP = G.screenHeight / 75;
 
-    const COLORREF COLOR_NORMAL = RGB(219, 195, 147);
-    const COLORREF COLOR_HOVER  = RGB(255, 200, 80);
-    const COLORREF COLOR_BORDER = RGB(50, 50, 50);
-    const COLORREF COLOR_TEXT   = BLACK;
+    constexpr COLORREF COLOR_NORMAL = RGB(219, 195, 147);
+    constexpr COLORREF COLOR_HOVER  = RGB(255, 200, 80);
+    constexpr COLORREF COLOR_BORDER = RGB(50, 50, 50);
 
     vector<UI_Button> buttons;
     for (int i = 0; i < ids.size(); i++){
@@ -698,7 +692,7 @@ int UI_ChooseID(vector<int> ids){
 
             fillroundrect(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, 10, 10);
 
-            settextcolor(COLOR_TEXT);
+            settextcolor(BLACK);
             settextstyle(24, 0, utf8_to_ansi("华文新魏").c_str());
             int tw = textwidth(btn.text.c_str());
             int th = textheight(btn.text.c_str());
@@ -713,10 +707,10 @@ int UI_ChooseID(vector<int> ids){
     return choice;
 }
 
-bool UI_SwitchToPlayerPanel(MouseEvent & evt){
+bool UI_SwitchToPlayerPanel(const MouseEvent & evt){
     const int BTN_W = G.screenWidth / 8;
     const int BTN_H = G.screenHeight / 10;
-    const int MARGIN = 50;
+    constexpr int MARGIN = 50;
 
     int x = G.screenWidth - BTN_W * 1.25 - MARGIN;
     int y = G.screenHeight - BTN_H * 1.5 - MARGIN;
