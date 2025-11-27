@@ -34,7 +34,7 @@ public: // 外部可以访问的
     // 这些函数会修改私有数据
     void addResource(ResourceType type, int amount);
     void removeResource(ResourceType type, int amount);
-   void addUsedKnight();
+    void addUsedKnight();
 
     // !!注意：这些函数只修改玩家数据不扣除相应的资源
     void addDevCard(DevCardType type);
