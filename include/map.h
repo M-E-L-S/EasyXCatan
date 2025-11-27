@@ -185,6 +185,7 @@ public:
        void updateHighlights();                // 更新高亮显示  //1
 
        //游戏建造相关
+        bool canBuildVillage(int vertexIndex,int playerId);
        bool buildVillage(int vertexIndex,int playerId);   //开局直接建设村庄
        void placeRobber(int pieceIndex);                       // 放置强盗     //1
        bool moveRobber();            // 移动强盗     //1

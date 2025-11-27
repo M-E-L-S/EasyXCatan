@@ -56,7 +56,7 @@ void PlayerInit(int playerId){;}
 // extern void Users_RegisterPlayer(const string &name, int id);
 // extern void Users_Draw(int playerId);
 // 主接口
-ActionType PlaterPanel(int playerId, vector<bool> tradeOption){return ActionType::BuildCity;}
+ActionType PlaterPanel(int playerId, vector<bool> tradeOption){return ActionType::EndTurn;}
 // 资源管理
 void Resources_Add(int playerId, vector<pair<ResourceType, int>>){;}
 // extern void Resources_Dec(int playerId, ResourceType type, int amount);
@@ -64,7 +64,7 @@ void Resources_Add(int playerId, vector<pair<ResourceType, int>>){;}
 // extern void Users_PlayDevCardUI();
 // extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
 // 分数管理(胜利判定)
-int Score_CheckVictory(int playerId, int LongestRoadScore){return 1;}
+int Score_CheckVictory(int playerId, int LongestRoadScore){return 10;}
 // // 资源卡数量检测（amount）
 // extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
@@ -212,7 +212,8 @@ void HandleDiceRoll(const MouseEvent &evt){
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
         UI_DiceRowing(d1, d2);
-        G.diceRoll = d1 + d2;
+        //G.diceRoll = d1 + d2;
+        G.diceRoll = 7;
 
         if (G.diceRoll == 7) {
             Resources_Discard();
@@ -288,10 +289,14 @@ void HandleRobberAnimate(){
     cleardevice();
     G.map->drawAll();
     if (G.map->moveRobber()){
+        cleardevice();
+        G.map->drawAll();
         UI_DrawHUD();
         FlushBatchDraw();
-        const int victim = UI_ChooseID(G.victims);
-        Resources_Discard(G.currentPlayer,  victim);
+        if (!G.victims.empty()){
+            const int victim = UI_ChooseID(G.victims);
+            Resources_Discard(G.currentPlayer,  victim);
+        }
         G.phase = TurnPhase::TurnStart;
     }else{
         UI_DrawHUD();
@@ -392,7 +397,6 @@ void HandleTurnStart(const MouseEvent & evt) {
     G.map->drawAll();
     //Users_Draw(G.currentPlayer);
     UI_DrawHUD();
-    FlushBatchDraw();
 
     if (UI_SwitchToPlayerPanel(evt)){
         const auto act = PlaterPanel(G.currentPlayer, G.map->GetTradeOption(G.currentPlayer));
@@ -427,6 +431,7 @@ void HandleTurnStart(const MouseEvent & evt) {
         //     G.phase = act;
         // }
     }
+    FlushBatchDraw();
 }
 
 // 回合结束
@@ -439,9 +444,10 @@ void HandleTurnEnd() {
     if (Score_CheckVictory(G.currentPlayer, LRS) == 10) {
         G.phase = TurnPhase::GameEnd;
         G.victoryPlayerId = G.currentPlayer;
+    }else{
+        G.currentPlayer = G.currentPlayer % G.playerCount + 1;
+        G.phase = TurnPhase::DiceRoll;
     }
-    G.currentPlayer = G.currentPlayer % G.playerCount + 1;
-    G.phase = TurnPhase::DiceRoll;
     // G.PlayedDevCard = false;
 }
 
@@ -521,7 +527,6 @@ int main() {
     }
 
     EndBatchDraw();
-    _getch();
     closegraph();
     return 0;
 }
@@ -618,6 +623,9 @@ void UI_DrawHUD(){
             break;
         case TurnPhase::TurnStart:
             UI_PhaseText("回合中……",235,184,36);
+            break;
+        case TurnPhase::RobberAnimate:
+            UI_PhaseText("奶龙移动中……",192,0,0);
             break;
         default:
             UI_PhaseText("……",235,184,36);
@@ -769,6 +777,11 @@ void UI_DiceRowing(const int d1, const int d2){
         UI_DrawHUD();
         putimage(x, y, G.dice + 14 + d1);
         putimage(x + 200, y, G.dice + 14 + d2);
+        string text = to_string(d1+d2) + "!";
+        setbkmode(TRANSPARENT);
+        settextcolor(RGB(251,210,84));
+        settextstyle(G.screenHeight / 10, 0, utf8_to_ansi("方正姚体").c_str(), 0, 0, FW_BOLD, false, false,  false);
+        outtextxy(G.screenWidth / 30, y, text.c_str());
         FlushBatchDraw();
 
         Sleep(30);

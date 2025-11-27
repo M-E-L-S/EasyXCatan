@@ -44,11 +44,18 @@ void Map::drawButtons(int x,int y,int index) {
 void Map::drawNumberCircle(int x,int y,int num){
     if(num == -1 ) return;
     setfillcolor(BLUE);
+    if(num == 6 ||num == 8) {
+        setfillcolor(RED);
+        setbkcolor(RED);
+    }else{
+        setbkcolor(BLUE);
+    }
     solidcircle(x,y,CR);
     char s[4]="";
     sprintf_s(s,"%d",num);
-  //  printf("there is %d\n",num);
+    //  printf("there is %d\n",num);
     settextstyle(30,17,"Consolas");
+
     outtextxy(x- textwidth(s)/2,y- textheight(s)/2,s);
 }
 void Map::drawSettlement(int x, int y, int playerId) {
@@ -134,6 +141,9 @@ void Map::placeRobber(int pieceIndex) {
 }
 bool Map::canBuildSettlement(int vertexIndex, int playerId) {
     if(vertexIndex < 0 || vertexIndex >= 54) {
+        return false;
+    }
+    if (vertices[vertexIndex].buildingType != 0){
         return false;
     }
     Vertex& v= vertices[vertexIndex];
@@ -427,7 +437,7 @@ void Map::establishEdgeVertexRelations(){
     }
 }
 std::vector<std::vector<std::pair<ResourceType, int>>> Map::distributeResources(int diceResult) {
-    std::vector<std::vector<std::pair<ResourceType, int>>> playerResources(4);
+    std::vector<std::vector<std::pair<ResourceType, int>>> playerResources(5);
 
     // 如果骰子是7，触发强盗，不分配资源,返回空
     if (diceResult == 7) {
@@ -437,7 +447,7 @@ std::vector<std::vector<std::pair<ResourceType, int>>> Map::distributeResources(
         Vertex& vertex = vertices[vertexIndex];
         // 如果顶点有建筑
         if (vertex.buildingType > 0 && vertex.owner != -1) {
-            int playerId = vertex.owner;
+            int playerId = vertex.owner - 1;
             // 获取顶点相邻的地块
             std::vector<int> neighbourPieces = getPiecesToVertex(vertexIndex);
             // 检查每个相邻地块
@@ -817,16 +827,26 @@ void Map::drawEdge(int edgeIndex) {
         setlinecolor(RGB(255, 215, 0)); // gold
         setlinestyle(PS_SOLID, highlightWidth);
     }else if (edge.owner!= -1) {
-        COLORREF playe_of_Color = RED;
-        setlinecolor(playe_of_Color); // 复用玩家颜色函数
+        int PlayerID = edge.owner;
+        COLORREF player_of_Color = RED;
+        if(PlayerID == 2){
+            player_of_Color = YELLOW;
+        }
+        if(PlayerID == 3){
+            player_of_Color = GREEN;
+        }
+        if(PlayerID == 4){
+            player_of_Color = BLUE;
+        }
+        setlinecolor(player_of_Color); // 复用玩家颜色函数
         setlinestyle(PS_SOLID, builtWidth);
-       // printf("linecolor:red\n");
+        // printf("linecolor:red\n");
     }else { setlinecolor(RGB(120,67,21));
         setlinestyle(PS_SOLID, defaultWidth);
-      //  printf("linecolor:black\n");
+        //  printf("linecolor:black\n");
     }
     line(x1, y1, x2, y2);
-   // printf("drawedge:%d\n",edgeIndex);
+    // printf("drawedge:%d\n",edgeIndex);
 }
 void Map::clearHighlights() {
     for (int e = 0; e < 72; e++) { // 卡坦岛共 72 条边
@@ -1083,8 +1103,17 @@ void Map::drawRoad(int x,int y,int PlayerID) {
                 return;
             }
             edges[i].owner =PlayerID;
-            COLORREF playe_of_Color = RED;
-            setlinecolor(playe_of_Color); // 复用玩家颜色函数
+            COLORREF player_of_Color = RED;
+            if(PlayerID == 2){
+                player_of_Color = YELLOW;
+            }
+            if(PlayerID == 3){
+                player_of_Color = GREEN;
+            }
+            if(PlayerID == 4){
+                player_of_Color = BLUE;
+            }
+            setlinecolor(player_of_Color); // 复用玩家颜色函数
             setlinestyle(PS_SOLID, 3);
             return;
         }
@@ -1229,6 +1258,7 @@ void Map::handleBuildRequest(BuildingType type,int playerId,bool isBeginning){
         case city:currentMode = MODE_CITY;break;
         default:break;
     }
+    currentPlayer  = playerId;
     updateHighlights();
 }
 bool Map::moveRobber() {
@@ -1253,24 +1283,39 @@ bool Map::moveRobber() {
         int t = index % 2;
         // 绘制图片，使用浮点数计算位置
         if (x1 > x2) {
-            putimage(currentX, currentY, &dragonImage[t]);
+            putimage(currentX - ROBBERWIDTH / 2, currentY - ROBBERHEIGHT / 2, &dragonImage[t + 2]);
             return false;
         } else {
-            putimage(currentX, currentY, &dragonImage[t + 2]);
+            putimage(currentX - ROBBERWIDTH / 2, currentY - ROBBERHEIGHT / 2, &dragonImage[t]);
             return false;
         }
     }
 
     pieces[toPiece].hasrobber = true;
     fromPiece = toPiece;
+    innu = 0;
+    progress = 0.0f;
     return true;
 }
+
+bool Map::canBuildVillage(int vertexIndex,int playerId){
+    for(int i:vertices[vertexIndex].neighbourVertices){
+        if(vertices[i].owner!=-1 || vertices[vertexIndex].owner != -1){
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Map::buildVillage(int vertexIndex,int playerId){
     if(vertexIndex>=0&&vertexIndex<54){
-    vertices[vertexIndex].buildingType=1;
-    vertices[vertexIndex].owner=playerId;
+        if(!canBuildVillage(vertexIndex,playerId)){
+            return false;
+        }
+        vertices[vertexIndex].buildingType=1;
+        vertices[vertexIndex].owner=playerId;
         clearHighlights();
-    return true;
+        return true;
     }else{
         clearHighlights();
         return false;
