@@ -34,7 +34,10 @@ std::string DevCardTypeToString(DevCardType card) {
  * @param state: 当前游戏状态（引用，用于切换到“建设中”状态）
  * @param lastDiceResult: 上次掷骰子点数，用于显示
  */
-enum class ActionType PlayerLoop(Player& player,GameState state, int lastDiceResult) {
+enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool> tradeOptions) {
+
+    //  初始化面板
+    GameState state = GameState:: IDLE;
 
     //  初始化面板
     PlayerPanel panel(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));

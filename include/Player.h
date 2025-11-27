@@ -49,6 +49,10 @@ public: // 外部可以访问的
     void setHasLongestRoad(bool hasIt);
     void setHasLargestArmy(bool hasIt);
 
+    // 计算需要弃牌的数量（逻辑不变，底层用数组求和）
+    int getDiscardCount() const;
+    bool discardResources(const int discardArray[RESOURCE_COUNT]);
+
 
 private: // 只有 Player 类内部能访问
 

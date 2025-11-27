@@ -11,7 +11,7 @@
 #define WHITE RGB(255, 255, 255)
 #define GRAY RGB(169, 169, 169)
 #define DARK_TEXT RGB(128, 128, 128)
-#define BTN_DISABLE_MASK RGB(169, 169, 169, 180) // 按钮禁用遮罩（半透明）
+#define BTN_DISABLE_MASK RGB(169, 169, 169) // 按钮禁用遮罩（半透明）
 
 // 构造函数：一次性初始化所有元素（Button位置一次性算好，不后续修改）
 DiscardPanel::DiscardPanel(int w, int h, Player& p)

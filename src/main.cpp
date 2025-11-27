@@ -7,18 +7,12 @@
 #include <cmath>
 #include <memory>
 
+#include "enumclass.h"
 #include "map.h"
+#include "BridgeToPlayer.h"
+#include "PlayerLoop.h"
 
 using namespace std;
-
-/* -----------------------
-    基本类型与枚举
-    ----------------------- */
-//enum class ResourceType { Wood, Brick, Ore, Sheep, Wheat, None };
-enum class BuildType { Road, Settlement, City, DoubleRoad, None };
-//enum class TradeType { Bank, Player, Port, None };
-//enum class DevCardType { Knight, VictoryPoint, Monopoly, RoadBuilding, YearOfPlenty, None };
-enum class ActionType { SwitchToMap, BuildRoad, BuildSettlement, BuildCity, Knight, RoadBuilding, EndTurn, None};
 
 struct MouseEvent {
     bool hasEvent = false;
@@ -50,42 +44,6 @@ enum class TurnPhase {
 int screenHeight = 0;
 int screenWidth = 0;
 
-// ----- 用户组 -----
-// 玩家初始化
-void PlayerInit(int playerId){;}
-// extern void Users_RegisterPlayer(const string &name, int id);
-// extern void Users_Draw(int playerId);
-// 主接口
-ActionType PlaterPanel(int playerId, vector<bool> tradeOption){return ActionType::EndTurn;}
-// 资源管理
-void Resources_Add(int playerId, vector<pair<ResourceType, int>>){;}
-// extern void Resources_Dec(int playerId, ResourceType type, int amount);
-// // 打出发展卡
-// extern void Users_PlayDevCardUI();
-// extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
-// 分数管理(胜利判定)
-int Score_CheckVictory(int playerId, int LongestRoadScore){return 10;}
-// // 资源卡数量检测（amount）
-// extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
-// 丢弃资源
-void Resources_Discard(){;} //强盗丢卡
-void Resources_Discard(int playerId, int victim){;} //玩家抽资源
-// extern void Resources_DoDiscard(int playerId);
-// extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
-// 最多的骑士特判
-int Users_CheckMostKnight(){return 1;}
-// 获取当前玩家昵称
-string Users_GetPlayerName(int playerId){return "Player" + to_string(playerId);}
-//
-// // ----- 交易组 -----
-// extern void Trade_Draw(int playerId);
-// // 玩家购买
-// extern bool Trade_PlayerBuy(int playerId, int mouseX, int mouseY);
-// // 银行交易
-// extern void Trade_BankTrade(int playerId, const vector<bool> &give, bool isFree);
-// // 玩家间交易
-// extern void Trade_PlayerTradeUI(int offeringPlayer, int receivingPlayer);
-
 // ----- UI -----
 // 绘制 HUD（包括当前回合、玩家信息、按钮等）
 void UI_DrawHUD();
@@ -94,6 +52,9 @@ bool UI_SwitchToPlayerPanel(const MouseEvent &evt);
 int UI_ChooseID(const vector<int>& ids);
 //ResourceType UI_ChooseResource();
 void UI_ShowWinner();
+string Users_GetPlayerName(int playerId){
+    return "Player" + to_string(playerId);
+}
 
 // 获取鼠标事件
 MouseEvent PollMouseEvent() {
@@ -111,7 +72,7 @@ MouseEvent PollMouseEvent() {
 /* -----------------------
     内部状态与工具函数
     ----------------------- */
-struct GameState {
+struct Game_state {
     int playerCount = 0;
     int currentPlayer = 0;
     TurnPhase phase = TurnPhase::PreGameSetup_FirstPlacement;
@@ -162,22 +123,24 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
 
     bool success =  false;
     if (G.isSettlement){
-        G.map->handleBuildRequest(BuildingType::village, G.currentPlayer, true);
+        G.map->handleBuildRequest(BuildingType::SETTLEMENT, G.currentPlayer, true);
         if (evt.leftDown) {
-            success = G.map->handleBuildRequest(BuildingType::village, G.currentPlayer, evt.x, evt.y,  true);
+            success = G.map->handleBuildRequest(BuildingType::SETTLEMENT, G.currentPlayer, evt.x, evt.y,  true);
         }
     }else{
-        G.map->handleBuildRequest(BuildingType::road, G.currentPlayer);
+        G.map->handleBuildRequest(BuildingType::ROAD, G.currentPlayer);
         if (evt.leftDown){
-            success = G.map->handleBuildRequest(BuildingType::road, G.currentPlayer, evt.x, evt.y);
+            success = G.map->handleBuildRequest(BuildingType::ROAD, G.currentPlayer, evt.x, evt.y);
         }
     }
 
     if (success){
         if (G.isSettlement){
             G.isSettlement = false;
-            const auto res = G.map->getPlayerResources(G.currentPlayer);
-            Resources_Add(G.currentPlayer, res);
+            if (G.phase == TurnPhase::PreGameSetup_SecondPlacement){
+                const auto res = G.map->getPlayerResources(G.currentPlayer);
+                Resources_Add(G.currentPlayer - 1, res);
+            }
         } else{
             if (G.phase == TurnPhase::PreGameSetup_FirstPlacement) {
                 if (G.currentPlayer + 1 <= G.playerCount) {
@@ -212,8 +175,7 @@ void HandleDiceRoll(const MouseEvent &evt){
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
         UI_DiceRowing(d1, d2);
-        //G.diceRoll = d1 + d2;
-        G.diceRoll = 7;
+        G.diceRoll = d1 + d2;
 
         if (G.diceRoll == 7) {
             Resources_Discard();
@@ -229,7 +191,7 @@ void HandleResourceDistribution() {
     const auto prod = G.map->distributeResources(G.diceRoll);
     for (int i=1; i<=G.playerCount; ++i) {
         if (!prod[i].empty()){
-            Resources_Add(i, prod[i]);
+            Resources_Add(i - 1, prod[i]);
         }
     }
     G.phase = TurnPhase::TurnStart;
@@ -311,11 +273,11 @@ void HandleBuild(const MouseEvent &evt){
     UI_DrawHUD();
     FlushBatchDraw();
 
-    auto building = BuildingType::road;
+    auto building = BuildingType::ROAD;
     if (G.building == BuildType::Settlement){
-        building = BuildingType::village;
+        building = BuildingType::SETTLEMENT;
     }else if (G.building == BuildType::City){
-        building = BuildingType::city;
+        building = BuildingType::CITY;
     }
     G.map->handleBuildRequest(building, G.currentPlayer);
     if (evt.leftDown){
@@ -399,7 +361,8 @@ void HandleTurnStart(const MouseEvent & evt) {
     UI_DrawHUD();
 
     if (UI_SwitchToPlayerPanel(evt)){
-        const auto act = PlaterPanel(G.currentPlayer, G.map->GetTradeOption(G.currentPlayer));
+        auto player = getPlayer(G.currentPlayer - 1);
+        const auto act = PlayerLoop(player, G.diceRoll, G.map->GetTradeOption(G.currentPlayer));
         switch (act){
             case ActionType::BuildRoad:
                 G.building = BuildType::Road;
@@ -441,7 +404,7 @@ void HandleTurnEnd() {
     if (G.currentPlayer == G.map->longRoadOwner()){
         LRS = 2;
     }
-    if (Score_CheckVictory(G.currentPlayer, LRS) == 10) {
+    if (Score_CheckVictory(G.currentPlayer - 1, LRS) == 10) {
         G.phase = TurnPhase::GameEnd;
         G.victoryPlayerId = G.currentPlayer;
     }else{
@@ -466,7 +429,7 @@ int main() {
     loadimage(&G.LR, "resources/image/LR.png", G.screenWidth / 10, G.screenHeight / 10);
     loadimage(&G.MK, "resources/image/MK.png", G.screenWidth / 10, G.screenHeight / 10);
     IMAGE bk;
-    loadimage(&bk, "resources/image/bk.png", G.screenWidth, G.screenHeight);
+    loadimage(&bk, "resources/image/background.png", G.screenWidth, G.screenHeight);
     char path[100] = {0};
     for(int i = 0; i < 21; i++) {
         sprintf(path, "resources/image/dice%d.png", i + 1);
@@ -476,6 +439,7 @@ int main() {
     SetupGame(4, (unsigned int)time(nullptr), bk);
 
     while (G.gameRunning) {
+        BeginBatchDraw();
         MouseEvent evt = PollMouseEvent();
 
         switch (G.phase) {
@@ -567,7 +531,7 @@ void UI_ScoreBoard(){
     int LRS = 0;
     bool MKS = Users_CheckMostKnight() == G.currentPlayer;
     if (G.map->longRoadOwner() == G.currentPlayer) LRS = 2;
-    int score = Score_CheckVictory(G.currentPlayer, LRS);
+    int score = Score_CheckVictory(G.currentPlayer - 1, LRS);
 
     settextcolor(WHITE);
     int fontHeight = G.screenHeight / 20;

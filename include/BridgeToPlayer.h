@@ -1,9 +1,16 @@
 #pragma once
 #include"Player.h"
 #include<graphics.h>
+#include "RobberManager.h"
+#include "RobbedResourcePanel.h"
+#include "DiscardPanel.h"
+#include "Common.h"
 #include <vector>
 
-inline COLORREF playerColor[4]={
+using namespace std;
+
+inline COLORREF playerColor[5]={
+    RGB(231,103,39),
     RGB(231,103,39),
     RGB(38,111,64),
     RGB(22,81,136),
@@ -17,13 +24,13 @@ inline void PlayerInit(int PlayerId) {
     players.push_back(player);
 }
 
-inline void Resource_Add(int playerId, vector<pair<ResourceType, int>> number) {
+inline void Resources_Add(int playerId, vector<pair<ResourceType, int>> number) {
     for (auto pair : number)
         players[playerId].addResource(pair.first,pair.second);
 }
 
 inline int Score_CheckVictory(int playerId, int LongestRoadScore) {
-    return players[playerId].getVictoryPoints();
+    return players[playerId].getVictoryPoints() + LongestRoadScore;
 }
 
 inline Player& getPlayer(int playerId) {

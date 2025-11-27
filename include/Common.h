@@ -1,5 +1,5 @@
 //该头文件定义基本的游戏状态、资源建筑发展卡的类型与成本与分数
-
+#include "enumclass.h"
 #pragma once
 
 #define SCREEN_WIDTH 1920
@@ -26,15 +26,6 @@ enum class GameState {
 
 // GameController 会询问这个枚举，来知道怎么与地图交互
 // 返回给主循环的动作类型
-enum class ActionType {
-    SwitchToMap, //
-    BuildRoad, //
-    BuildSettlement, //
-    BuildCity, //
-    Knight,
-    RoadBuilding,
-    EndTurn, //
-    None };
 
 enum class ButtonTypeFromPanel {
     NONE,
@@ -50,17 +41,6 @@ enum class ButtonTypeFromPanel {
     SWITCH_TO_MAP,
 };
 
-// 定义资源类型
-enum ResourceType
-{
-    WOOD,   // 木头
-    BRICK,  // 砖块
-    SHEEP,  // 羊
-    WHEAT,  // 小麦
-    ORE,    // 石头
-    RESOURCE_COUNT // 资源种类的总数 :5
-};
-
 // 地块资源类型
 enum TerrainType {
     FOREST,    // 森林 -> 木头
@@ -70,15 +50,6 @@ enum TerrainType {
     MOUNTAINS, // 山脉 -> 矿石
     DESERT,    // 沙漠 -> 无资源
     TERRAIN_COUNT
-};
-
-// 定义建筑类型
-enum BuildingType
-{
-    ROAD,   // 路
-    SETTLEMENT,  // 村庄
-    CITY,  // 城市
-    BUILDING_COUNT // 建筑种类的总数: 3
 };
 
 // 定义发展卡类型

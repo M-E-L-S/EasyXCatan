@@ -12,35 +12,7 @@ void Map::set_line(int x1,int y1,int x2,int y2,COLORREF color){
     setlinecolor(color);
     line(x1,y1,x2,y2);
 }
-void Map::drawButtons(int x,int y,int index) {
-    int left = x - RTL/2 ;
-    int right = x + RTL/2 ;
-    int top = y - RTW/2;
-    int bottom = y + RTW/2;
-    setfillcolor(RED);
-    fillroundrect(left,top,right,bottom,RTR,RTR);
-    const char* s1=buildButtons[0].text;
-    const char* s2=buildButtons[1].text;
-    const char* s3=buildButtons[2].text;
-    const char* s4=buildButtons[3].text;
-    switch(index){
-        case 0:
-            outtextxy(x-textwidth(s1)/2,y- textheight(s1)/2,s1);
-            break;
-        case 1:
-            outtextxy(x-textwidth(s2)/2,y- textheight(s2)/2,s2);
-            break;
-        case 2:
-            outtextxy(x-textwidth(s3)/2,y- textheight(s3)/2,s3);
-            break;
-        case 3:
-            outtextxy(x-textwidth(s4)/2,y- textheight(s4)/2,s4);
-            break;
-        default:
-            break;
 
-    }
-}
 void Map::drawNumberCircle(int x,int y,int num){
     if(num == -1 ) return;
     setfillcolor(BLUE);
@@ -454,7 +426,7 @@ std::vector<std::vector<std::pair<ResourceType, int>>> Map::distributeResources(
             for (int pieceIndex : neighbourPieces) {
                 MapPiece& piece = pieces[pieceIndex];
                 // 如果地块数字匹配骰子结果且没有强盗
-                if (piece.num == diceResult && !piece.hasrobber && piece.r != r6) {
+                if (piece.num == diceResult && !piece.hasrobber && piece.r != RESOURCE_COUNT) {
                     // 根据建筑类型决定资源数量,如果被强盗占领，资源不增加
                     int resourceCount = (vertex.buildingType == 1) ? 1 : 2; // 村庄1个，城市2个
                     playerResources[playerId].push_back({piece.r, resourceCount});
@@ -465,46 +437,6 @@ std::vector<std::vector<std::pair<ResourceType, int>>> Map::distributeResources(
     }
 
     return playerResources;
-}
-void Map::set_button() {
-    int startX = 50;           // 起始X坐标
-    int startY = 500;          // 起始Y坐标
-    int buttonWidth = 100;     // 按钮宽度
-    int buttonHeight = 30;     // 按钮高度
-    int buttonSpacing = 10;    // 按钮间距
-    // 设置取消建造模式按钮
-    buildButtons[0].x = startX;
-    buildButtons[0].y = startY;
-    buildButtons[0].width = buttonWidth;
-    buildButtons[0].height = buttonHeight;
-    buildButtons[0].text = "取消建造模式";
-    buildButtons[0].isActive = false;
-    buildButtons[0].mode = MODE_NONE;
-    // 设置建筑按钮（村庄）
-    buildButtons[1].x = startX + buttonWidth + buttonSpacing;
-    buildButtons[1].y = startY;
-    buildButtons[1].width = buttonWidth;
-    buildButtons[1].height = buttonHeight;
-    buildButtons[1].text = "建造村庄";
-    buildButtons[1].isActive = false;
-    buildButtons[1].mode = MODE_SETTLEMENT;
-    // 设置道路按钮
-    buildButtons[2].x = startX + (buttonWidth + buttonSpacing) * 2;
-    buildButtons[2].y = startY;
-    buildButtons[2].width = buttonWidth;
-    buildButtons[2].height = buttonHeight;
-    buildButtons[2].text = "建造道路";
-    buildButtons[2].isActive = false;
-    buildButtons[2].mode = MODE_ROAD;
-    // 设置城市按钮
-    buildButtons[3].x = startX + (buttonWidth + buttonSpacing) * 3;
-    buildButtons[3].y = startY;
-    buildButtons[3].width = buttonWidth;
-    buildButtons[3].height = buttonHeight;
-    buildButtons[3].text = "升级城市";
-    buildButtons[3].isActive = false;
-    buildButtons[3].mode = MODE_CITY;
-
 }
 void Map::initMap(IMAGE A) {
     set_bg(A);
@@ -544,30 +476,30 @@ void Map::set_map() {
     int centerY = screenHeight/2;
     double hexSize = Size*cos(PI/6);
     // 第1层（中心）：1个
-    pieces[0] = {centerX, centerY, r1, Size, 0, true,false};
+    pieces[0] = {centerX, centerY, WOOD, Size, 0, true,false};
     // 第2层（中间环）：6个
     int layer2Radius = hexSize * 2;
     int layer2OffsetY = static_cast<int>(hexSize * sqrt(3));
-    pieces[1] = {centerX + layer2Radius, centerY, r1, Size, 0, false,false};
-    pieces[2] = {centerX + layer2Radius/2, centerY + layer2OffsetY, r1, Size, 0, false,false};
-    pieces[3] = {centerX - layer2Radius/2, centerY + layer2OffsetY, r1, Size, 0, false,false};
-    pieces[4] = {centerX - layer2Radius, centerY, r1, Size, 0, false,false};
-    pieces[5] = {centerX - layer2Radius/2, centerY - layer2OffsetY, r1, Size, 0, false,false};
-    pieces[6] = {centerX + layer2Radius/2, centerY - layer2OffsetY, r1, Size, 0, false,false};
+    pieces[1] = {centerX + layer2Radius, centerY, WOOD, Size, 0, false,false};
+    pieces[2] = {centerX + layer2Radius/2, centerY + layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[3] = {centerX - layer2Radius/2, centerY + layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[4] = {centerX - layer2Radius, centerY, WOOD, Size, 0, false,false};
+    pieces[5] = {centerX - layer2Radius/2, centerY - layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[6] = {centerX + layer2Radius/2, centerY - layer2OffsetY, WOOD, Size, 0, false,false};
     // 第3层（外环）：12个
     double layer3Radius = hexSize * 4;
-    pieces[7]  = {centerX + static_cast<int>(layer3Radius), centerY, r1, Size, 0, false,false};
-    pieces[8]  = {centerX + static_cast<int>(3*hexSize), centerY + layer2OffsetY, r1, Size, 0, false,false};
-    pieces[9]  = {centerX + static_cast<int>(hexSize*2), centerY + 3*Size, r1, Size, 0, false,false};
-    pieces[10] = {centerX , centerY + 3*Size, r1, Size, 0, false,false};
-    pieces[11] = {centerX - layer2Radius, centerY + 3*Size, r1, Size, 0, false,false};
-    pieces[12] = {centerX - static_cast<int>(3*hexSize), centerY + layer2OffsetY, r1, Size, 0, false,false};
-    pieces[13] = {centerX - static_cast<int>(layer3Radius), centerY , r1, Size, 0, false,false};
-    pieces[14] = {centerX - static_cast<int>(3*hexSize), centerY - layer2OffsetY, r1, Size, 0, false,false};
-    pieces[15] = {centerX - layer2Radius, centerY - 3*Size, r1, Size, 0, false,false};
-    pieces[16] = {centerX, centerY - 3*Size, r1, Size, 0, false,false};
-    pieces[17] = {centerX + layer2Radius, centerY - 3*Size, r1, Size, 0, false,false};
-    pieces[18] = {centerX + static_cast<int>(3*hexSize), centerY - layer2OffsetY, r1, Size, 0, false,false};
+    pieces[7]  = {centerX + static_cast<int>(layer3Radius), centerY, WOOD, Size, 0, false,false};
+    pieces[8]  = {centerX + static_cast<int>(3*hexSize), centerY + layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[9]  = {centerX + static_cast<int>(hexSize*2), centerY + 3*Size, WOOD, Size, 0, false,false};
+    pieces[10] = {centerX , centerY + 3*Size, WOOD, Size, 0, false,false};
+    pieces[11] = {centerX - layer2Radius, centerY + 3*Size, WOOD, Size, 0, false,false};
+    pieces[12] = {centerX - static_cast<int>(3*hexSize), centerY + layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[13] = {centerX - static_cast<int>(layer3Radius), centerY , WOOD, Size, 0, false,false};
+    pieces[14] = {centerX - static_cast<int>(3*hexSize), centerY - layer2OffsetY, WOOD, Size, 0, false,false};
+    pieces[15] = {centerX - layer2Radius, centerY - 3*Size, WOOD, Size, 0, false,false};
+    pieces[16] = {centerX, centerY - 3*Size, WOOD, Size, 0, false,false};
+    pieces[17] = {centerX + layer2Radius, centerY - 3*Size, WOOD, Size, 0, false,false};
+    pieces[18] = {centerX + static_cast<int>(3*hexSize), centerY - layer2OffsetY, WOOD, Size, 0, false,false};
 
 }
 void Map::setNumbers() {
@@ -576,7 +508,7 @@ void Map::setNumbers() {
     pieces[0].num = -1 ;
     // 为每个非沙漠地块分配数字
     for (int i = 1; i < 19; i++) {
-        if (pieces[i].r != r6) { // 不是沙漠
+        if (pieces[i].r != RESOURCE_COUNT) { // 不是沙漠
             pieces[i].num = numbers[numberIndex++];
         } else {
             pieces[i].num = 0;
@@ -590,12 +522,12 @@ void Map::setNumbers() {
 
 void Map::shuffleResources() {
     std::shuffle(std::begin(resourcetype), std::end(resourcetype), rng);
-    pieces[0].r=r6;
+    pieces[0].r=RESOURCE_COUNT;
     pieces[0].hasrobber = true;
     pieces[0].num=0;
     int t=1;
     for (int i=0;i<19;i++ ) {
-        if (resourcetype[i] == r6) {
+        if (resourcetype[i] == RESOURCE_COUNT) {
             continue;
         }
         pieces[t].r=resourcetype[i];
@@ -611,7 +543,7 @@ Map::Map(unsigned int seed) : randomSeed(seed), isInitialized(false), currentMod
     rng.seed(randomSeed);
     // 初始化地块
     for (int i = 0; i < 19; i++) {
-        pieces[i] = {0, 0, r1, 0, 0, false};
+        pieces[i] = {0, 0, WOOD, 0, 0, false};
     }
     // 初始化顶点
     for (int i = 0; i < 54; i++) {
@@ -620,10 +552,6 @@ Map::Map(unsigned int seed) : randomSeed(seed), isInitialized(false), currentMod
     // 初始化边
     for (int i = 0; i < 72; i++) {
         edges[i] = {0, 0, 0, 0, {}, -1, false};
-    }
-    // 初始化按钮
-    for (int i = 0; i < 4; i++) {
-        buildButtons[i] = {0, 0, 0, 0, "", false, MODE_NONE};
     }
 }
 void Map::drawHexagonBorder(int x, int y, int size) {
@@ -644,17 +572,17 @@ void Map::drawHexagonBorder(int x, int y, int size) {
 // 获取资源对应的颜色（适配 MinGW + EasyX，避免未定义颜色常量）
 COLORREF Map::getResourceColor(ResourceType type) {
     switch (type) {
-        case r1:  // 森林（r1 = 森林）
+        case WOOD:  // 森林（r1 = 森林）
             return RGB(0, 100, 0);    // 深绿色（替代 DARKGREEN，MinGW 兼容）
-        case r2:  // 丘陵（r2 = 丘陵）
+        case BRICK:  // 丘陵（r2 = 丘陵）
             return RGB(165, 42, 42);  // 棕色（替代 BROWN，精准匹配卡坦岛风格）
-        case r3:  // 山脉（r3 = 山脉）
+        case ORE:  // 山脉（r3 = 山脉）
             return RGB(128, 128, 128); // 中灰色（替代 GRAY，MinGW 兼容）
-        case r4:  // 草地（r4 = 草地）
+        case SHEEP:  // 草地（r4 = 草地）
             return RGB(34, 139, 34);   // 翠绿色（比默认 GREEN 更贴近草地）
-        case r5:  // 稻田（r5 = 稻田）
+        case WHEAT:  // 稻田（r5 = 稻田）
             return RGB(255, 215, 0);   // 金色（比默认 YELLOW 更贴近小麦）
-        case r6:  // 沙漠（r6 = 沙漠）
+        case RESOURCE_COUNT:  // 沙漠（r6 = 沙漠）
             return RGB(245, 245, 220); // 米白色（比 LIGHTGRAY 更贴近沙漠）
         default:  // 默认颜色（防止枚举值异常）
             return WHITE;
@@ -663,17 +591,17 @@ COLORREF Map::getResourceColor(ResourceType type) {
 // 获取资源名称
 const char* Map::getResourceName(ResourceType type) {
     switch (type) {
-        case r1:  // 森林（r1 = 森林）
+        case WOOD:  // 森林（r1 = 森林）
             return "forest" ;
-        case r2:  // 丘陵（r2 = 丘陵）
+        case BRICK:  // 丘陵（r2 = 丘陵）
             return "hill";
-        case r3:  // 山脉（r3 = 山脉）
+        case ORE:  // 山脉（r3 = 山脉）
             return "mountain";
-        case r4:  // 草地（r4 = 草地）
+        case SHEEP:  // 草地（r4 = 草地）
             return "pasture";
-        case r5:  // 稻田（r5 = 稻田）
+        case WHEAT:  // 稻田（r5 = 稻田）
             return "field";
-        case r6:  // 沙漠（r6 = 沙漠）
+        case RESOURCE_COUNT:  // 沙漠（r6 = 沙漠）
             return "desert";
         default:  // 防止异常
             return "Wrong resource";
@@ -714,7 +642,7 @@ bool Map::isValidNumberPlacement(int pieceIndex, int number) {
     if (number < 2 || number > 12 || number == 7) {
         return false;
     }
-    if (pieces[pieceIndex].r == r6) {
+    if (pieces[pieceIndex].r == RESOURCE_COUNT) {
         return false;
     }
     std::vector<int> currentPieceVertices;
@@ -744,7 +672,7 @@ bool Map::isValidNumberPlacement(int pieceIndex, int number) {
 // 找到沙漠地块
 int Map::findDesertPiece() {
     for (int i = 0; i < 19; i++) {
-        if(pieces[i].r==r6) {
+        if(pieces[i].r==RESOURCE_COUNT) {
             return i;
         }
     }
@@ -936,10 +864,10 @@ void Map::drawAll() {
 std::vector<std::pair<ResourceType, int>> Map::getPlayerResources(int playerId) {
     std::vector<std::pair<ResourceType, int>> resources;
     // 初始化资源计数器（6种资源）
-    int resourceCounts[6] = {0}; // 对应 r1-r6
+    int resourceCounts[5] = {0}; // 对应 r1-r6
     calculateResourcesFromBuildings(playerId, resourceCounts);
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 5; i++) {
         if (resourceCounts[i] > 0) {
             resources.push_back({static_cast<ResourceType>(i), resourceCounts[i]});
         }
@@ -949,23 +877,21 @@ std::vector<std::pair<ResourceType, int>> Map::getPlayerResources(int playerId) 
 }
 void Map::calculateResourcesFromBuildings(int playerId, int resourceCounts[6]) {
     // 遍历所有顶点，找到该玩家的建筑
-    for (int vertexIndex = 0; vertexIndex < 54; vertexIndex++) {
-        Vertex& vertex = vertices[vertexIndex];
-        if (vertex.buildingType > 0 && vertex.owner == playerId) {
+
             // 获取建筑相邻的地块
-            std::vector<int> neighbourPieces = getPiecesToVertex(vertexIndex);
+            std::vector<int> neighbourPieces = getPiecesToVertex(currentvillage);
             // 为每个相邻地块添加资源
             for (int pieceIndex : neighbourPieces) {
                 MapPiece& piece = pieces[pieceIndex];
                 // 排除沙漠和有强盗的地块
-                if (piece.r != r6 && !piece.hasrobber) {
+                if (piece.r != RESOURCE_COUNT && !piece.hasrobber) {
                     // 根据建筑类型决定资源数量
-                    int resourceAmount = (vertex.buildingType == 1) ? 1 : 2; // 村庄1个，城市2个
+                    int resourceAmount =  1 ; // 村庄1个，城市2个
                     resourceCounts[piece.r] += resourceAmount;
                 }
             }
-        }
-    }
+
+
 }
 std::vector<bool> Map::GetTradeOption(int playerId) {
     // 7位交易选项: [4:1, 3:1, 木材2:1, 砖块2:1, 矿石2:1, 羊毛2:1, 粮食2:1]
@@ -1165,10 +1091,6 @@ int Map::dfs(int play,int start,std::vector<bool>& visited) {
 
 bool Map::checkButtonClick(int x, int y) {
     for(int i=0;i<4;i++) {
-        Button btn=buildButtons[i];
-        if(x>=btn.x-btn.width/2&&x<=btn.x+btn.width/2&&y>=btn.y-btn.height/2&&y<=btn.y+btn.height/2) {
-            return true;
-        }
     }
     return false;
 }   // 检查按钮点击
@@ -1235,27 +1157,27 @@ void Map::drawPieces(int x, int y, int size, ResourceType type, int number , boo
     // 绘制强盗（如果有）
 }
 bool Map::handleBuildRequest(BuildingType type,int playerId,int mousex,int mousey,bool isBeginning){
-    if(type == road){
+    if(type == ROAD){
         int edgeindex = findEdgeAt(mousex,mousey);
         return buildRoad(edgeindex,playerId);
     }
     int vertexindex = findVertexAt(mousex,mousey);
-    if(type == village){
+    if(type == SETTLEMENT){
         if(isBeginning){
             return buildVillage(vertexindex,playerId);
         }
          return buildSettlement(vertexindex,playerId);
     }
-    if(type == city){
+    if(type == CITY){
         return buildCity(vertexindex,playerId);
     }
     return false;
 }
 void Map::handleBuildRequest(BuildingType type,int playerId,bool isBeginning){
     switch(type){
-        case road:currentMode = MODE_ROAD;printf("setROAD_MODE\n");break;
-        case village:currentMode = MODE_SETTLEMENT;break;
-        case city:currentMode = MODE_CITY;break;
+        case ROAD:currentMode = MODE_ROAD;printf("setROAD_MODE\n");break;
+        case SETTLEMENT:currentMode = MODE_SETTLEMENT;break;
+        case CITY:currentMode = MODE_CITY;break;
         default:break;
     }
     currentPlayer  = playerId;
@@ -1315,6 +1237,7 @@ bool Map::buildVillage(int vertexIndex,int playerId){
         vertices[vertexIndex].buildingType=1;
         vertices[vertexIndex].owner=playerId;
         clearHighlights();
+        currentvillage = vertexIndex;
         return true;
     }else{
         clearHighlights();

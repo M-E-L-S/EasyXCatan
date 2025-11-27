@@ -27,7 +27,9 @@ Player::Player(int id, COLORREF playerColor) :
     // 将所有建筑数量初始化为 0
     for (int i = 0; i < BUILDING_COUNT; i++)
     {
-        buildingNumber[i] = 0;
+        if (i==SETTLEMENT||i==ROAD)
+            buildingNumber[i]=2;
+        else buildingNumber[i] = 0;
     }
 
     // 将所有发展卡数量初始化为 0
@@ -192,6 +194,46 @@ void Player::payForBuilding(BuildingType type)
         if (cost > 0)
             removeResource((ResourceType)i, cost);
     }
+}
+
+// 计算需要弃牌的数量（逻辑不变，底层用数组求和）
+int Player::getDiscardCount() const {
+    int total = getTotalResourceCount();
+    return total > 7 ? total / 2 : 0;
+}
+
+// 弃牌操作：参数换成数组（完全不用map）
+// discardArray[i] = 第i种资源要弃的数量（i对应ResourceType枚举索引）
+bool Player::discardResources(const int discardArray[RESOURCE_COUNT]) {
+    int totalDiscard = 0;
+
+    // 1. 检查弃牌合法性（资源足够 + 索引合法）
+    for (int i = 0; i < RESOURCE_COUNT; ++i) {
+        int needDiscard = discardArray[i];
+        // 跳过不需要弃的资源
+        if (needDiscard <= 0) continue;
+
+        // 用你已有的getResourceCount（基于数组）检查数量
+        if (getResourceCount((ResourceType)i) < needDiscard) {
+            return false; // 资源不足，弃牌失败
+        }
+        totalDiscard += needDiscard;
+    }
+
+    // 2. 检查弃牌总数是否匹配要求
+    if (totalDiscard != getDiscardCount()) {
+        return false;
+    }
+
+    // 3. 执行弃牌（调用你已有的removeResource，操作数组）
+    for (int i = 0; i < RESOURCE_COUNT; ++i) {
+        int needDiscard = discardArray[i];
+        if (needDiscard > 0) {
+            removeResource((ResourceType)i, needDiscard);
+        }
+    }
+
+    return true;
 }
 
 

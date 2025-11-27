@@ -17,6 +17,7 @@
 #include <random>
 #include<iostream>
 #include<time.h>
+#include "enumclass.h"
 
 #pragma comment(lib,"MSIMG32.LIB")
 #pragma comment(lib,"winmm.lib")
@@ -42,19 +43,6 @@ inline void putimage(int x,int y,IMAGE* img){
     int h = img->getheight();
     AlphaBlend(GetImageHDC(NULL),x,y,w,h, GetImageHDC(img),0,0,w,h,{AC_SRC_OVER,0,255,AC_SRC_ALPHA});
 }
-enum ResourceType{
-    r1,    //forest
-    r2,    //hill
-    r3,    //mountain
-    r4,    //pasture
-    r5,    //field
-    r6     //desert
-};
-enum BuildingType{
-    road,
-    village,
-    city
-};
 enum BuildMode {
     MODE_NONE,      // 无模式
     MODE_ROAD,      // 道路模式
@@ -103,16 +91,17 @@ struct Edge{
     int isHarbour;   //港口类型为 -1（不是港口） 0（3：1） 1-5对应五种2:1专用港口
 };
 
-//按钮
-struct Button {
-    int x, y, width, height;
-    const char* text;
-    bool isActive;   //是否处于可点击状态
-    BuildMode mode;
-};
+// //按钮
+// struct Button {
+//     int x, y, width, height;
+//     const char* text;
+//     bool isActive;   //是否处于可点击状态
+//     BuildMode mode;
+// };
 
 //地图结构
 class Map{
+    int currentvillage;
        IMAGE bg;
        MapPiece pieces[19];   //构建板块
        Vertex vertices[60];   //储存顶点（用于建设村庄/城市）
@@ -121,12 +110,12 @@ class Map{
         int fromPiece;
         int toPiece;
        ResourceType resourcetype[19]={
-        r1,r1,r1,r1,
-        r2,r2,r2,
-        r3,r3,r3,
-        r4,r4,r4,r4,
-        r5,r5,r5,r5,
-        r6
+        WOOD,WOOD,WOOD,WOOD,
+        BRICK,BRICK,BRICK,
+        ORE,ORE,ORE,
+        SHEEP,SHEEP,SHEEP,SHEEP,
+        WHEAT,WHEAT,WHEAT,WHEAT,
+        RESOURCE_COUNT
        };
        IMAGE pieceImage[6];
        IMAGE dragonImage[4];
@@ -136,7 +125,7 @@ class Map{
        bool isInitialized;
        BuildMode currentMode;     // 当前建造模式
 
-       Button buildButtons[4];    // 四个建造按钮
+       //Button buildButtons[4];    // 四个建造按钮
        unsigned int randomSeed;   // 随机数种子
        std::mt19937 rng;          // 随机数生成器
 
