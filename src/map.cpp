@@ -42,34 +42,25 @@ void Map::drawButtons(int x,int y,int index) {
     }
 }
 void Map::drawNumberCircle(int x,int y,int num){
+    if(num == -1 ) return;
     setfillcolor(BLUE);
     solidcircle(x,y,CR);
-    char s[3]="";
+    char s[4]="";
     sprintf_s(s,"%d",num);
-    //printf("there is %d\n",num);
+  //  printf("there is %d\n",num);
+    settextstyle(30,17,"Consolas");
     outtextxy(x- textwidth(s)/2,y- textheight(s)/2,s);
 }
 void Map::drawSettlement(int x, int y, int playerId) {
-    IMAGE village;
-    char name[20]="";
-    sprintf_s(name,"village%d.png",playerId);
-    printf("put %s",name);
-    loadimage(&village,name,VILLAGEWIDTH,VILLAGEHEIGHT);
-    putimage(x-VILLAGEWIDTH/2,y-VILLAGEHEIGHT/2,&village);
+    putimage(x-VILLAGEWIDTH/2,y-VILLAGEHEIGHT/2,&villageImage[playerId-1]);
 }
 void Map::drawCity(int x, int y, int playerId) {
-    IMAGE city;
-    char name[20]="";
-    sprintf_s(name,"city%d.png",playerId);
-    loadimage(&city,name);
-    putimage(x,y,&city);
+
+    putimage(x-CITYWIDTH/2,y-CITYHEIGHT,&cityImage[playerId-1]);
 
 }
 void Map::drawRobber(int x,int y) {
-    IMAGE robber;
-    char name[50] = "dragon1.png";
-    loadimage(&robber,name,ROBBERWIDTH,ROBBERHEIGHT);
-    putimage(x-ROBBERWIDTH/2,y-ROBBERHEIGHT/2,&robber);
+    putimage(x-ROBBERWIDTH/2,y-ROBBERHEIGHT/2,&dragonImage[0]);
 }
 int Map::findPieceAt(int x, int y) {
     const int mouseTolerance = Size * sqrt(3)/2; //鼠标点击距离板块正中心的误差范围
@@ -180,12 +171,15 @@ bool Map::canBuildRoad(int edgeIndex, int playerId) {
         return false;
     }
     Edge& e= edges[edgeIndex];
-    if(findVertexAt(e.x1, e.y1)>=0&&findVertexAt(e.x2,e.y2)>=0) {
+    if(e.owner!=-1){
+        return false;
+    }
+    if(findVertexAt(e.x1, e.y1)<0&&findVertexAt(e.x2,e.y2)<0) {
         return false;
     }
     int v1= findVertexAt(e.x1, e.y1);
     int v2= findVertexAt(e.x2, e.y2);
-    if(vertices[v1].owner==playerId&&vertices[v2].owner==playerId) {
+    if(vertices[v1].owner==playerId||vertices[v2].owner==playerId) {
         return true;
     }
     for(int n:vertices[v1].neighbourEdges) {
@@ -268,13 +262,14 @@ std::vector<int> Map::getBuildableVertices(int playerId) {
     return buildableVertices;
 }
 std::vector<int> Map::getBuildableEdges(int playerId){
-    std::vector<int> buildableVertices;
-    for (int i = 0; i < 54; i++) {
-        if (canBuildSettlement(i, playerId)) {
-            buildableVertices.push_back(i);
+    std::vector<int> buildableEdges;
+    for (int i = 0; i < 72; i++) {
+        if (canBuildRoad(i, playerId)) {
+            printf("succesfully build a road\n");
+            buildableEdges.push_back(i);
         }
     }
-    return buildableVertices;
+    return buildableEdges;
 
 }
 std::vector<int> Map::getEdgesToEdges(int edgeIndex) {
@@ -507,22 +502,32 @@ void Map::initMap(IMAGE A) {
     // 建立19个板块
     set_map();
     // 随机分布资源
+    fromPiece = 0;
     shuffleResources();
     // 设置数字编号
     setNumbers();
     // 计算顶点和边
-
     calculateVerticesAndEdges();
-
+    init_player();
+    set_harbour();
     //建立关系
     establishVertexNeighbours();
     establishEdgeVertexRelations();
     // 设置按钮
  //   set_button();
     // 初始化玩家
+    loadImage();   //预加载所有图片
     currentPlayer = 4;
     currentMode = MODE_NONE;
     isInitialized = true;
+}
+void Map::init_player() {
+    for(int i=0;i<72;i++){
+        edges[i].owner = -1;
+    }
+    for(int i=0;i<54;i++){
+        vertices[i].owner = -1;
+    }
 }
 void Map::set_map() {
     int centerX = screenWidth/2;
@@ -558,15 +563,18 @@ void Map::set_map() {
 void Map::setNumbers() {
     std::vector<int> numbers = {6, 3, 11, 9, 4, 5, 10, 9, 12, 11, 4, 8, 10, 5, 2, 6, 3, 8};
     int numberIndex = 0;
+    pieces[0].num = -1 ;
     // 为每个非沙漠地块分配数字
-    for (int i = 0; i < 19; i++) {
+    for (int i = 1; i < 19; i++) {
         if (pieces[i].r != r6) { // 不是沙漠
             pieces[i].num = numbers[numberIndex++];
         } else {
             pieces[i].num = 0;
             pieces[i].hasrobber = true; // 沙漠初始有强盗
         }
+      //  printf("vertex%d:%d\n",i,pieces[i].num);
     }
+
 
 }
 
@@ -575,13 +583,16 @@ void Map::shuffleResources() {
     pieces[0].r=r6;
     pieces[0].hasrobber = true;
     pieces[0].num=0;
+    int t=1;
     for (int i=0;i<19;i++ ) {
         if (resourcetype[i] == r6) {
             continue;
         }
-        pieces[i].r=resourcetype[i];
-        pieces[i].hasrobber = false;
-        pieces[i].num = -1;
+        pieces[t].r=resourcetype[i];
+        pieces[t].hasrobber = false;
+        pieces[t].num = -1;
+        t++;
+      //  printf("%d:%d\n",i,pieces[i].r);
 
     }
 }
@@ -741,7 +752,7 @@ void Map::drawVertex(int vertexIndex) {
         // 可建造状态：高亮金色圆圈（提示玩家可建村庄）
         setfillcolor(RGB(255, 215, 0)); // 金色填充
         setlinecolor(RGB(255, 180, 0)); // 深金色边框
-        fillcircle(x, y, vertexRadius); // 放大1号，更醒目
+        fillcircle(x, y, 7*vertexRadius); // 放大1号，更醒目
     } else if (v.buildingType == 0 && !v.isHarbour) {
         // 无建筑且非港口：灰色小圆圈（默认状态）
         setfillcolor(LIGHTGRAY);
@@ -798,18 +809,21 @@ void Map::drawEdge(int edgeIndex) {
     Edge edge = edges[edgeIndex];
     int x1 = edge.x1, y1 = edge.y1;
     int x2 = edge.x2, y2 = edge.y2;
-    const int defaultWidth = 3;    // 未占用道路宽度（细灰边）
+    const int defaultWidth = 6;    // 未占用道路宽度（细灰边）
     const int builtWidth = 10;      // 已建造道路宽度（加粗，玩家颜色）
-    const int highlightWidth = 5;  // 可建造道路宽度（金色，醒目）
+    const int highlightWidth = 20;  // 可建造道路宽度（金色，醒目）
     if(edge.isHighlighted) {
+        printf("edge[%d]:ishighlighted\n",edgeIndex);
         setlinecolor(RGB(255, 215, 0)); // gold
         setlinestyle(PS_SOLID, highlightWidth);
-    }else if (edge.owner!= 1) {
+    }else if (edge.owner!= -1) {
         COLORREF playe_of_Color = RED;
         setlinecolor(playe_of_Color); // 复用玩家颜色函数
         setlinestyle(PS_SOLID, builtWidth);
-    }else { setlinecolor(LIGHTGRAY);
+       // printf("linecolor:red\n");
+    }else { setlinecolor(RGB(120,67,21));
         setlinestyle(PS_SOLID, defaultWidth);
+      //  printf("linecolor:black\n");
     }
     line(x1, y1, x2, y2);
    // printf("drawedge:%d\n",edgeIndex);
@@ -874,6 +888,7 @@ void Map::drawAllRobbers() {
         MapPiece& piece = pieces[i];
         if (piece.hasrobber) {
             drawRobber(piece.x, piece.y);
+            printf("draw robbers");
         }
     }
 }
@@ -971,15 +986,15 @@ void Map::set_harbour() {
     }
     // 直接指定港口位置（确保在最外层且间隔足够）
     std::vector<std::pair<int, int>> harbourAssignments = {
-            {2,   0},   // 边2: 通用港口
-            {14,  0},   // 边14: 通用港口
-            {38,  0},   // 边38: 通用港口
-            {56,  0},   // 边56: 通用港口
-            {8,   1},   // 边8: 木材专用港口
-            {26,  2},   // 边26: 砖块专用港口
-            {44,  3},   // 边44: 矿石专用港口
-            {62,  4},   // 边62: 羊毛专用港口
-            {20,  5}    // 边20: 粮食专用港口
+            {34,   0},   //  边 ：通用港口
+            {35,  1},   // 边14: 通用港口
+            {39,  0},   // 边38: 通用港口
+            {43,  3},   // 边56: 通用港口
+            {47,   0},   // 边8: 木材专用港口
+            {53,  2},   // 边26: 砖块专用港口
+            {57,  0},   // 边44: 矿石专用港口
+            {64,  4},   // 边62: 羊毛专用港口
+            {69,  5}    // 边20: 粮食专用港口
     };
     for (const auto& assignment : harbourAssignments) {
         int edgeIndex = assignment.first;
@@ -1039,24 +1054,8 @@ bool Map::hasGeneralPort(int playerId) {
     return false;
 }
 void Map::drawHarbour(){
-    IMAGE harbour1;
-    IMAGE harbour2;
-    IMAGE r1;
-    IMAGE r2;
-    IMAGE r3;
-    IMAGE r4;
-    IMAGE r5;
-    loadimage(&harbour1,"");
-    loadimage(&harbour2,"");
-    loadimage(&r1,"");
-    loadimage(&r2,"");
-    loadimage(&r3,"");
-    loadimage(&r4,"");
-    loadimage(&r5,"");
-    int centrex = pieces[0].x;
-    int centrey = pieces[0].y;
-    double lamda = 0.2;
-    for(const Edge edge:edges){
+    for(int i=0;i<72;i++){
+        Edge edge = edges[i];
         if(edge.isHarbour>=0){
             int x1 = edge.x1;
             int x2 = edge.x2;
@@ -1064,27 +1063,17 @@ void Map::drawHarbour(){
             int y2 = edge.y2;
             int x3 = (x1+x2)/2;
             int y3 = (y1+y2)/2;
-            double imagex = x3 + lamda * (x3 - centrex);
-            double imagey = y3 + lamda * (y3 - centrey);
-            if(edge.isHarbour == 0){
-                putimage(imagex,imagey,&harbour1);
-            }else {
-                putimage(imagex,imagey,&harbour2);
-                if(edge.isHarbour == 1){
-                    putimage(imagex,imagey,&r1);}
-                if(edge.isHarbour == 2){
-                    putimage(imagex,imagey,&r2);
-                }
-                if(edge.isHarbour == 3){
-                    putimage(imagex,imagey,&r3);
-                }if(edge.isHarbour == 4){
-                    putimage(imagex,imagey,&r4);
-                }if(edge.isHarbour == 5){
-                    putimage(imagex,imagey,&r5);
-                }
+            int centrex = pieces[0].x;
+            int centrey = pieces[0].y;
+            double lamda = 0.05;
+            double imageX = x3 - HARBOURSIZE/2;
+            double imageY = y3 - HARBOURSIZE/2;
+            double imagex = imageX + lamda * (imageX - centrex);
+            double imagey = imageY + lamda * (imageY - centrey);
+            putimage(imagex,imagey,&harbourImage[edge.isHarbour]);
+            printf("%d\n",i);
             }
         }
-    }
 }
 void Map::drawRoad(int x,int y,int PlayerID) {
     for(int i=0;i<72;i++) {
@@ -1167,6 +1156,7 @@ void Map::updateHighlights() {
             std::vector<int> buildable_edges=getBuildableEdges(currentPlayer);
             for(int n:buildable_edges) {
                 edges[n].isHighlighted=true;
+                printf("edge[%d] is highlighted\n",n);
             }
             break;
         }
@@ -1195,46 +1185,36 @@ void Map::drawMap() {
         drawPieces(pieces[i].x,pieces[i].y,Size,pieces[i].r,pieces[i].num,pieces[i].hasrobber);
     }
     for(int i=0;i<72;i++) {
-        drawEdge(i);
-    }
-   for(int i=0;i<54;i++) {
-       drawVertex(i);
-     //  printf("drawvertex:%d\n",i);
+        drawEdge(i);}
+    for(int i=0;i<54;i++) {
+    drawVertex(i);
+  //    printf("drawvertex:%d\n",i);
    }
-  //  drawHarbour();
+    drawHarbour();
 
 }//绘制地图
 
 void Map::drawPieces(int x, int y, int size, ResourceType type, int number , bool hasRobber ) {
-    const char* imagePaths[6] = {
-            "forest.png",    // r1 森林
-            "hill.png",      // r2 丘陵
-            "mountain.png",  // r3 山脉
-            "pasture.png",   // r4 草地
-            "field.png",     // r5 稻田
-            "desert.png"     // r6 沙漠
-    };
-    IMAGE hexImage;
-    loadimage(&hexImage,imagePaths[type],PICTUREWIDTH,PICTUREHEIGHT);
+
   //  printf("suc:%s:\n",imagePaths[type]);
      int width = PICTUREWIDTH;
      int height = PICTUREHEIGHT;
-    putimage(x-width/2,y-height/2,&hexImage);
+    putimage(x-width/2,y-height/2,&pieceImage[type]);
     // 绘制六边形边框
     drawHexagonBorder(x, y, size);
     drawNumberCircle(x,y,number);
     // 绘制强盗（如果有）
-    if (hasRobber) {
-        placeRobber(number);
-    }
 }
-bool Map::handleBuildRequest(BuildingType type,int playerId,int mousex,int mousey){
+bool Map::handleBuildRequest(BuildingType type,int playerId,int mousex,int mousey,bool isBeginning){
     if(type == road){
         int edgeindex = findEdgeAt(mousex,mousey);
         return buildRoad(edgeindex,playerId);
     }
     int vertexindex = findVertexAt(mousex,mousey);
     if(type == village){
+        if(isBeginning){
+            return buildVillage(vertexindex,playerId);
+        }
          return buildSettlement(vertexindex,playerId);
     }
     if(type == city){
@@ -1242,76 +1222,61 @@ bool Map::handleBuildRequest(BuildingType type,int playerId,int mousex,int mouse
     }
     return false;
 }
-void Map::handleBuildRequest(BuildingType type,int playerId){
+void Map::handleBuildRequest(BuildingType type,int playerId,bool isBeginning){
     switch(type){
-        case road:currentMode = MODE_ROAD;break;
+        case road:currentMode = MODE_ROAD;printf("setROAD_MODE\n");break;
         case village:currentMode = MODE_SETTLEMENT;break;
         case city:currentMode = MODE_CITY;break;
         default:break;
     }
     updateHighlights();
 }
-void Map::moveRobber(int fromPiece, int toPiece) {
+bool Map::moveRobber() {
     pieces[fromPiece].hasrobber = false;
-    cleardevice();
-    drawAll();
+
     int x1=pieces[fromPiece].x;
     int y1=pieces[fromPiece].y;
     int x2=pieces[toPiece].x;
     int y2=pieces[toPiece].y;
-    IMAGE img[2];
-    char path[100] = {0};
-    if(x1>x2) {
-        for(int i = 0; i < 2; i++) {
-            sprintf(path, "dragon%d.png", i + 1);
-            loadimage(img + i, path, 70, 95);
-        }
-    }
-    else {
-        for(int i = 2; i < 4; i++) {
-            sprintf(path, "dragon%d.png", i + 1);
-            loadimage(img + (i-2), path, 70, 95);
-        }
-    }
-    const int frameDelay = 1000 / 60;  // 60FPS
-    int frameStart = 0;
-    int frameTime = 0;
-    // 调整这些参数来控制移动速度
-    int index = 0;
-    int speed = 333;
-    float duration=6.0f;
-    float progress=0.0f;
-    DWORD startTime = GetTickCount();
+    static int innu=0;
+    innu++;
+    int index = innu/4;
 
+    static float progress=0.0f;
+    float step=1.0/30;
     while(progress<1.0f) {
-        frameStart = clock();
-        progress = (GetTickCount() - startTime) / (duration * 1000.0f);
-        int currentX = x1-ROBBERWIDTH/2 + (int)((x2 - x1) * progress);
-        int currentY = y1-ROBBERHEIGHT/2 + (int)((y2 - y1) * progress);
-
-        index = (GetTickCount() / speed) % 2;
-        BeginBatchDraw();
-        cleardevice();
-        drawAll();
+        if (innu % 4 == 0) {
+            progress += step;
+        }
+        int currentX = x1 + (int) ((x2 - x1) * progress);
+        int currentY = y1 + (int) ((y2 - y1) * progress);
+        int t = index % 2;
         // 绘制图片，使用浮点数计算位置
-        putimage(currentX, currentY, img + index);
-        EndBatchDraw();
-        frameTime = clock() - frameStart;
-        if(frameTime < frameDelay) {
-            Sleep(frameDelay - frameTime);
+        if (x1 > x2) {
+            putimage(currentX, currentY, &dragonImage[t]);
+            return false;
+        } else {
+            putimage(currentX, currentY, &dragonImage[t + 2]);
+            return false;
         }
     }
+
     pieces[toPiece].hasrobber = true;
+    fromPiece = toPiece;
+    return true;
 }
-void Map::buildVillage(int vertexIndex,int playerId){
+bool Map::buildVillage(int vertexIndex,int playerId){
+    if(vertexIndex>=0&&vertexIndex<54){
     vertices[vertexIndex].buildingType=1;
     vertices[vertexIndex].owner=playerId;
-    clearHighlights();
+        clearHighlights();
+    return true;
+    }else{
+        clearHighlights();
+        return false;
+    }
 }
-void Map::buildroad(int edgeIndex, int playerId){
-    edges[edgeIndex].owner=playerId;
-    clearHighlights();
-}
+
 void Map::handleRobberMove(){
     for(int i=0;i<19;i++){
         if(!pieces[i].hasrobber) {
@@ -1319,9 +1284,11 @@ void Map::handleRobberMove(){
         }
     }
 }
-std::vector<int> Map::handleRobberMove(int mousex,int mousey){
+std::pair<bool,std::vector<int>> Map::handleRobberMove(int mousex,int mousey){
     std::vector<int> players;
     int destination = findPieceAt(mousex,mousey);
+    toPiece = destination;
+    if(destination == -1 || pieces[destination].hasrobber) return make_pair(false,players);
     int start;
     for(int i = 0;i<19;i++){
         if(pieces[i].hasrobber){
@@ -1329,7 +1296,7 @@ std::vector<int> Map::handleRobberMove(int mousex,int mousey){
             break;
         }
     }
-    moveRobber(start,destination);
+
     for(int vertexIndex = 0;vertexIndex < 54;vertexIndex++){
         int player = vertices[vertexIndex].owner;
         if(player==-1){
@@ -1341,5 +1308,41 @@ std::vector<int> Map::handleRobberMove(int mousex,int mousey){
             }
         }
     }
-   return players;
+   return make_pair(true,players);
+}
+void Map::loadImage() {
+    loadimage(&bg,IMAGE_PATH"background.jpg",screenWidth,screenHeight);
+    const char* imagePaths[6] = {
+            IMAGE_PATH"forest.png",    // r1 森林
+            IMAGE_PATH"hill.png",      // r2 丘陵
+            IMAGE_PATH"mountain.png",  // r3 山脉
+            IMAGE_PATH"pasture.png",   // r4 草地
+            IMAGE_PATH"field.png",     // r5 稻田
+            IMAGE_PATH"desert1.png"     // r6 沙漠
+    };
+
+    for(int type = 0;type< 6;type++){
+    loadimage(&pieceImage[type],imagePaths[type],PICTUREWIDTH,PICTUREHEIGHT);
+    }
+    for(int i=1;i<=4;i++){
+        char s[50]="";
+    sprintf_s(s,"%sdragon%d.png",IMAGE_PATH,i);
+    loadimage(&dragonImage[i-1],s,ROBBERWIDTH,ROBBERHEIGHT);
+    }
+    for(int i=0;i<6;i++){
+        char s[50]="";
+        sprintf_s(s,"%sharbour%d.png",IMAGE_PATH,i);
+        loadimage(&harbourImage[i],s,HARBOURSIZE,HARBOURSIZE);
+    }
+    for(int i=1;i<=4;i++){
+        char s[50]="";
+        sprintf_s(s,"%svillage%d.png",IMAGE_PATH,i);
+        loadimage(&villageImage[i-1],s,VILLAGEWIDTH,VILLAGEHEIGHT);
+    }
+    for(int i=1;i<=4;i++){
+        char s[50]="";
+        sprintf_s(s,"%scity%d.png",IMAGE_PATH,i);
+        loadimage(&cityImage[i-1],s,CITYWIDTH,CITYHEIGHT);
+    }
+
 }

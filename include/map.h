@@ -26,14 +26,17 @@
 #define RTR 5  //圆角矩形圆半径
 #define Size 120 //六边形边长
 #define PI 3.14159265358979323846
-#define VILLAGEWIDTH 100
-#define VILLAGEHEIGHT  100
+#define VILLAGEWIDTH 60
+#define VILLAGEHEIGHT  60
 #define CITYWIDTH 180
 #define CITYHEIGHT 180
-#define PICTUREWIDTH 165
-#define PICTUREHEIGHT  165
-#define ROBBERWIDTH 100
-#define ROBBERHEIGHT 100
+#define PICTUREWIDTH 205
+#define PICTUREHEIGHT  234
+#define ROBBERWIDTH 150
+#define ROBBERHEIGHT 195
+#define HARBOURSIZE 100
+#define IMAGE_PATH "resources/image/"
+#define SOUND_PATH "resources/sound/"
 inline void putimage(int x,int y,IMAGE* img){
     int w = img->getwidth();
     int h = img->getheight();
@@ -115,6 +118,8 @@ class Map{
        Vertex vertices[60];   //储存顶点（用于建设村庄/城市）
        Edge edges[80];   //储存边（用于建设道路）
 //地形总数储存
+        int fromPiece;
+        int toPiece;
        ResourceType resourcetype[19]={
         r1,r1,r1,r1,
         r2,r2,r2,
@@ -123,20 +128,27 @@ class Map{
         r5,r5,r5,r5,
         r6
        };
+       IMAGE pieceImage[6];
+       IMAGE dragonImage[4];
+       IMAGE harbourImage[6];
+       IMAGE villageImage[4];
+       IMAGE cityImage[4];
        bool isInitialized;
        BuildMode currentMode;     // 当前建造模式
-       int currentPlayer;         // 当前玩家
+
        Button buildButtons[4];    // 四个建造按钮
        unsigned int randomSeed;   // 随机数种子
        std::mt19937 rng;          // 随机数生成器
 
 public:
+      int currentPlayer;         // 当前玩家
        //地图构建相关
        explicit Map(unsigned int seed = 0);
        void set_bg(IMAGE A);
        void initMap(IMAGE A);   //初始化地图    //1
                          //标准地图备份
-
+       void init_player();   //初始边和点的owner为-1  //1
+       void loadImage();
        void shuffleResources();   //随机分布资源     //1
        void setNumbers();    //设置数字编号      //1
        void set_map();     //建立19块板块      //1
@@ -154,7 +166,7 @@ public:
        void set_circle(int x,int y,COLORREF color);   //画圆(顶点)  //1
        void set_line(int x1,int y1,int x2,int y2,COLORREF color);    //设置粗直线(边)  //1
        void drawButtons(int x,int y,int index);   //绘制按钮  //1
-       void drawSettlement(int x, int y, int playerId);   // 绘制村庄(x,y)为图片左上角坐标 //1
+       void drawSettlement(int x, int y, int playerId);   // 绘制村庄 //1
        void drawCity(int x, int y, int playerId);         // 绘制城市  //1
        void drawNumberCircle(int x,int y,int num);   //绘制板块中心的带编号的圆圈  //1
        void drawRobber(int x,int y);    //绘制强盗（沙漠地区）   //1
@@ -173,20 +185,19 @@ public:
        void updateHighlights();                // 更新高亮显示  //1
 
        //游戏建造相关
-       void buildVillage(int vertexIndex,int playerId);   //开局直接建设村庄
-       void buildroad(int edgeIndex, int playerId);  //开局直接建设道路
+       bool buildVillage(int vertexIndex,int playerId);   //开局直接建设村庄
        void placeRobber(int pieceIndex);                       // 放置强盗     //1
-       void moveRobber(int fromPiece, int toPiece);            // 移动强盗     //1
+       bool moveRobber();            // 移动强盗     //1
        void handleRobberMove();   //放置强盗前高亮可放置的板块数字  //1
-       std::vector<int> handleRobberMove(int mousex,int mousey);  //转移强盗，返回周围玩家ID   //1
+       std::pair<bool,std::vector<int>> handleRobberMove(int mousex,int mousey);  //转移强盗，返回周围玩家ID   //1
        bool canBuildSettlement(int vertexIndex, int playerId); // 判断是否可以建造村庄    //1
        bool canBuildCity(int vertexIndex, int playerId);       // 判断是否可以建造城市    //1
        bool canBuildRoad(int edgeIndex, int playerId);         // 判断是否可以建造道路    //1
        bool buildSettlement(int vertexIndex, int playerId);    // 建造村庄       //1
        bool buildCity(int vertexIndex, int playerId);          // 建造城市       //1
        bool buildRoad(int edgeIndex, int playerId);            // 建造道路       //1
-       void handleBuildRequest(BuildingType type,int playerId);   //更新建造时的高亮  //1
-       bool handleBuildRequest(BuildingType type,int playerId,int mousex,int mousey);  //实现建造  //1
+       void handleBuildRequest(BuildingType type,int playerId,bool isBeginning = false);   //更新建时的高亮  //1
+       bool handleBuildRequest(BuildingType type,int playerId,int mousex,int mousey,bool isBeginning = false);  //实现建造  //1
 
        //资源分配相关函数
        std::vector<std::vector<std::pair<ResourceType, int>>> distributeResources(int diceResult); //返回玩家获得资源种类及数量

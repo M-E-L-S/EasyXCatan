@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
-#include <cassert>
+#include <cmath>
 #include <memory>
 
 #include "map.h"
@@ -50,40 +50,32 @@ enum class TurnPhase {
 int screenHeight = 0;
 int screenWidth = 0;
 
-// 玩家建设
-extern void Map_HandleBuildRequest(BuildType type, int playerId, bool isPre = false);
-extern bool Map_HandleBuildRequest(BuildType type, int playerId, int mouseX, int mouseY, bool isPre = false);
-// 强盗移动(ID List)
-extern void Map_MoveRobber();
-extern pair<bool, vector<int>> Map_MoveRobber(int mouseX, int mouseY);
-extern bool Map_MoveRobberAnimate();
-
 // ----- 用户组 -----
 // 玩家初始化
-extern void PlayerInit(int playerId);
+void PlayerInit(int playerId){;}
 // extern void Users_RegisterPlayer(const string &name, int id);
 // extern void Users_Draw(int playerId);
 // 主接口
-extern ActionType PlaterPanel(int playerId, vector<bool> tradeOption);
+ActionType PlaterPanel(int playerId, vector<bool> tradeOption){return ActionType::BuildCity;}
 // 资源管理
-extern void Resources_Add(int playerId, vector<pair<ResourceType, int>>);
+void Resources_Add(int playerId, vector<pair<ResourceType, int>>){;}
 // extern void Resources_Dec(int playerId, ResourceType type, int amount);
 // // 打出发展卡
 // extern void Users_PlayDevCardUI();
 // extern DevCardType Users_PlayDevCardUI(int playerId, int mouseX, int mouseY);
 // 分数管理(胜利判定)
-extern int Score_CheckVictory(int playerId, int LongestRoadScore);
+int Score_CheckVictory(int playerId, int LongestRoadScore){return 1;}
 // // 资源卡数量检测（amount）
 // extern int Resources_CheckDiscardCount(int playerId, ResourceType res);
 // 丢弃资源
-extern void Resources_Discard(); //强盗丢卡
-extern void Resources_Discard(int playerId, int victim); //玩家抽资源
+void Resources_Discard(){;} //强盗丢卡
+void Resources_Discard(int playerId, int victim){;} //玩家抽资源
 // extern void Resources_DoDiscard(int playerId);
 // extern ResourceType Resources_DoDiscard(int playerId, int mouseX, int mouseY);
 // 最多的骑士特判
-extern int Users_CheckMostKnight();
+int Users_CheckMostKnight(){return 1;}
 // 获取当前玩家昵称
-extern string Users_GetPlayerName(int playerId);
+string Users_GetPlayerName(int playerId){return "Player" + to_string(playerId);}
 //
 // // ----- 交易组 -----
 // extern void Trade_Draw(int playerId);
@@ -170,14 +162,14 @@ void HandlePreGamePlacement(const MouseEvent& evt) {
 
     bool success =  false;
     if (G.isSettlement){
-        Map_HandleBuildRequest(BuildType::Settlement, G.currentPlayer, true);
+        G.map->handleBuildRequest(BuildingType::village, G.currentPlayer, true);
         if (evt.leftDown) {
-            success = Map_HandleBuildRequest(BuildType::Settlement, G.currentPlayer, evt.x, evt.y,  true);
+            success = G.map->handleBuildRequest(BuildingType::village, G.currentPlayer, evt.x, evt.y,  true);
         }
     }else{
-        Map_HandleBuildRequest(BuildType::Road, G.currentPlayer);
+        G.map->handleBuildRequest(BuildingType::road, G.currentPlayer);
         if (evt.leftDown){
-            success = Map_HandleBuildRequest(BuildType::Road, G.currentPlayer, evt.x, evt.y);
+            success = G.map->handleBuildRequest(BuildingType::road, G.currentPlayer, evt.x, evt.y);
         }
     }
 
@@ -237,7 +229,6 @@ void HandleResourceDistribution() {
     for (int i=1; i<=G.playerCount; ++i) {
         if (!prod[i].empty()){
             Resources_Add(i, prod[i]);
-            //TODO 此处应该有炫酷的动画
         }
     }
     G.phase = TurnPhase::TurnStart;
@@ -283,9 +274,9 @@ void HandleRobberResolve(const MouseEvent &evt) {
     UI_DrawHUD();
     FlushBatchDraw();
 
-    Map_MoveRobber();
+    G.map->handleRobberMove();
     if (evt.leftDown) {
-        const auto [ok, victims] = Map_MoveRobber(evt.x, evt.y);
+        const auto [ok, victims] = G.map->handleRobberMove(evt.x, evt.y);
         if (ok){
             G.phase  = TurnPhase::RobberAnimate;
             G.victims = victims;
@@ -296,7 +287,7 @@ void HandleRobberResolve(const MouseEvent &evt) {
 void HandleRobberAnimate(){
     cleardevice();
     G.map->drawAll();
-    if (Map_MoveRobberAnimate()){
+    if (G.map->moveRobber()){
         UI_DrawHUD();
         FlushBatchDraw();
         const int victim = UI_ChooseID(G.victims);
@@ -315,14 +306,16 @@ void HandleBuild(const MouseEvent &evt){
     UI_DrawHUD();
     FlushBatchDraw();
 
-    auto building = G.building;
-    if (building == BuildType::DoubleRoad){
-        building = BuildType::Road;
+    auto building = BuildingType::road;
+    if (G.building == BuildType::Settlement){
+        building = BuildingType::village;
+    }else if (G.building == BuildType::City){
+        building = BuildingType::city;
     }
-    Map_HandleBuildRequest(building, G.currentPlayer);
+    G.map->handleBuildRequest(building, G.currentPlayer);
     if (evt.leftDown){
         bool success = false;
-        success = Map_HandleBuildRequest(building, G.currentPlayer, evt.x, evt.y);
+        success = G.map->handleBuildRequest(building, G.currentPlayer, evt.x, evt.y);
         if (success){
             if (G.building == BuildType::DoubleRoad){
                 G.building = BuildType::Road;
@@ -603,7 +596,7 @@ void UI_PlayerName(){
     string fontNameAnsi = utf8_to_ansi("华文新魏");
     settextstyle(fontHeight, 0, fontNameAnsi.c_str(), 0, 0, FW_BOLD, false, false,  false);
     string nameTextAnsi = utf8_to_ansi(nameText);
-    outtextxy((G.screenWidth - textwidth(nameTextAnsi.c_str())) / 2, G.screenHeight - fontHeight * 2 - G.screenHeight / 50, nameTextAnsi.c_str());
+    outtextxy(G.screenWidth / 50, G.screenHeight - fontHeight * 2 - G.screenHeight / 50, nameTextAnsi.c_str());
 }
 
 void UI_DrawHUD(){
@@ -778,6 +771,95 @@ void UI_DiceRowing(const int d1, const int d2){
         putimage(x + 200, y, G.dice + 14 + d2);
         FlushBatchDraw();
 
+        Sleep(30);
+    }
+}
+
+void smooth_action(int startW, int startH, int duration = 1000) {
+    int w = G.screenWidth;
+    int h = G.screenHeight;
+    int totalFrames = duration / 8; // 这里的帧数计算可能导致循环次数较少，建议 duration / 16 或直接用时间差
+
+    // 静态资源加载
+    static IMAGE img_bk;
+    static IMAGE card;
+    static IMAGE vic;
+    static bool isLoaded = false;
+    if (!isLoaded) {
+        loadimage(&img_bk, "resources/image/background.jpg", w, h);
+        loadimage(&card, "resources/image/card.jpg", 500, 500);
+        loadimage(&vic, "resources/image/victory.jpg", w,h);
+        isLoaded = true;
+        printf("OK\n");
+    }
+
+    IMAGE buffer;
+    buffer.Resize(w, h); // 假设你的库支持这个Resize，如果报错请用 Resize(&buffer, w, h) 或重新 loadimage
+
+    for (int frame = 0; frame < totalFrames; frame++) {
+        // 1. 设置绘图目标为缓冲图片
+        SetWorkingImage(&buffer);
+        cleardevice();
+
+        // 2. 计算缓动参数
+        float progress = (float)frame / totalFrames;
+        float easeProgress = 1.0f - pow(1.0f - progress, 3); // Cubic Ease Out
+        int cur_w = startW + (int)((w - startW) * easeProgress);
+        int cur_h = startH + (int)((h - startH) * easeProgress);
+
+        int x = (w - cur_w) / 2;
+        int y = (h - cur_h) / 2;
+
+        // 3. 绘制背景和卡片
+        putimage(0, 0, &img_bk);
+        putimage((w - 500) / 2, (h - 500) / 2, &card);
+
+        IMAGE scaledImg;
+        loadimage(&scaledImg, "resources/image/victory.jpg", cur_w, cur_h);
+        putimage(x, y, &scaledImg);
+
+        // 5. 切换回屏幕并显示缓冲内容
+        SetWorkingImage(NULL);
+        putimage(0, 0, &buffer);
+
+        FlushBatchDraw();
+
+        // 你的代码里 Sleep(30) 会导致动画偏慢，
+        // 1000ms / 30ms ≈ 33帧，但你计算的 totalFrames = 1000/8 = 125帧
+        // 125 * 30ms = 3.75秒，动画会比预期的1秒慢很多。建议改为 Sleep(10)
+        Sleep(10);
+    }
+
+    MCIERROR ret = mciSendString(_T("open \"resources/sound/victory_music.mp3\" alias victory_music"), NULL, 0, NULL);
+    if (ret != 0) {
+        TCHAR msg[100];
+        mciGetErrorString(ret, msg, 100);
+        _tprintf(_T("音乐播放错误: %s\n"), msg);
+    } else {
+        mciSendString(_T("play victory_music"), NULL, 0, NULL);
+    }
+    int cnt = 133;
+    while (cnt--){
+        putimage(0, 0, &img_bk);
+        putimage((w - 500) / 2, (h - 500) / 2, &card);
+        putimage(0,0,&vic);
+        FlushBatchDraw();
+
+        Sleep(30);
+    }
+    mciSendString(_T("close victory_music"), NULL, 0, NULL);
+}
+void UI_ShowWinner() {
+    setbkcolor(RGB(164,115,56));
+    cleardevice();
+    IMAGE img_bk;
+
+    // 从100x100的小图片逐渐放大到屏幕尺寸
+    smooth_action(100, 100, 1000);
+
+    while (true){
+        MouseEvent evt = PollMouseEvent();
+        if (evt.leftDown) break;
         Sleep(30);
     }
 }
