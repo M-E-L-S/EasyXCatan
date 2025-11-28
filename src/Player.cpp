@@ -170,11 +170,12 @@ void Player::removeDevCard(DevCardType type) {
 
 void Player::addBuilding(BuildingType type)
 {
-    buildingNumber[type]++;
+    this->buildingNumber[type]++;
 }
 void Player::removeBuilding(BuildingType type)
 {
-    buildingNumber[type]--;
+    if (this->buildingNumber[type] > 0)
+    this->buildingNumber[type]--;
 }
 
 
@@ -192,7 +193,7 @@ void Player::payForBuilding(BuildingType type)
         // 获取该建筑对该资源的消耗量
         int cost = BUILDING_COSTS[type][i];
         if (cost > 0)
-            removeResource((ResourceType)i, cost);
+            this->removeResource((ResourceType)i, cost);
     }
 }
 
