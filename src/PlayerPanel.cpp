@@ -146,7 +146,7 @@ void PlayerPanel::drawResources(const Player& player) {
     settextcolor(BLACK);
 
     // 资源名称备用（如果没有图片）
-    const char* resNames[RESOURCE_COUNT] = { "Wood", "Brick", "Sheep", "Wheat", "Ore" };
+    const char* resNames[RESOURCE_COUNT] = { "crab", "book", "hamburger", "coffee", "outcome" };
     // 资源对应颜色备用
     COLORREF resColors[RESOURCE_COUNT] = { RGB(34,139,34), RGB(178,34,34), RGB(152,251,152), RGB(255,215,0), RGB(105,105,105) };
 

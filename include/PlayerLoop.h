@@ -143,7 +143,7 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
                         showImageWindow("./assets/kingcrab.jpg");
 
                     }
-                    if (lastDiceResult == 1) {
+                    if (lastDiceResult == 2) {
 
                         for (int i=0;i<BUILDING_COUNT;i++)
                             player.removeBuilding(BuildingType(i));

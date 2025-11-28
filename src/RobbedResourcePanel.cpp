@@ -120,11 +120,11 @@ void RobbedResourcePanel::drawTexts() {
         // 资源名称（和目标UI的switch对应）
         std::string resName;
         switch (stolenResType) {
-        case 0: resName = "木头"; break;
-        case 1: resName = "砖块"; break;
-        case 2: resName = "羊毛"; break;
-        case 3: resName = "小麦"; break;
-        case 4: resName = "矿石"; break;
+        case 0: resName = "帝王蟹"; break;
+        case 1: resName = "书籍"; break;
+        case 2: resName = "汉堡"; break;
+        case 3: resName = "咖啡"; break;
+        case 4: resName = "研究成果"; break;
         default: resName = "未知资源"; break;
         }
         msg = "从 P" + std::to_string(victimID) + " 抢到了: " + resName;
