@@ -27,6 +27,7 @@ void Map::drawNumberCircle(int x,int y,int num){
     sprintf_s(s,"%d",num);
     //  printf("there is %d\n",num);
     settextstyle(30,17,"Consolas");
+    settextcolor(WHITE);
 
     outtextxy(x- textwidth(s)/2,y- textheight(s)/2,s);
 }

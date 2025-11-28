@@ -175,8 +175,10 @@ void HandleDiceRoll(const MouseEvent &evt){
     if (evt.leftDown) {
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
-        UI_DiceRowing(d1, d2);
-        G.diceRoll = d1 + d2;
+        //UI_DiceRowing(d1, d2);
+        //G.diceRoll = d1 + d2;
+        UI_DiceRowing(3,4);
+        G.diceRoll = 7;
 
         if (G.diceRoll == 7) {
             Resources_Discard();
@@ -424,7 +426,7 @@ int main() {
     screenHeight = G.screenHeight;
     screenWidth = G.screenWidth;
     initgraph(G.screenWidth, G.screenHeight);
-    srand((unsigned int)time(nullptr));
+    //srand((unsigned int)time(nullptr));
     MusicManager Music;
     Music.play(MusicType::PANEL);
     BeginBatchDraw();
@@ -432,14 +434,14 @@ int main() {
     loadimage(&G.LR, "resources/image/LR.png", G.screenWidth / 10, G.screenHeight / 10);
     loadimage(&G.MK, "resources/image/MK.png", G.screenWidth / 10, G.screenHeight / 10);
     IMAGE bk;
-    loadimage(&bk, "resources/image/background.png", G.screenWidth, G.screenHeight);
+    loadimage(&bk, "resources/image/background.jpg", G.screenWidth, G.screenHeight);
     char path[100] = {0};
     for(int i = 0; i < 21; i++) {
         sprintf(path, "resources/image/dice%d.png", i + 1);
         loadimage(G.dice + i, path, 100, 100);
     }
 
-    SetupGame(4, (unsigned int)time(nullptr), bk);
+    SetupGame(4, 1, bk);
 
     while (G.gameRunning) {
         BeginBatchDraw();
