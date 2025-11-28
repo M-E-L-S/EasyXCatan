@@ -13,6 +13,30 @@
 #define DARK_TEXT RGB(128, 128, 128)
 #define BTN_DISABLE_MASK RGB(169, 169, 169) // 按钮禁用遮罩（半透明）
 
+
+
+static std::string utf8_to_ansi(const std::string &utf8) {
+    if (utf8.empty()) return std::string();
+    // 先从 UTF-8 转为宽字符串
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+    if (wlen == 0) return std::string();
+    std::wstring wstr;
+    wstr.resize(wlen);
+    MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wstr[0], wlen);
+
+    // 再从宽字符串转为 ANSI（CP_ACP）
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (len == 0) return std::string();
+    std::string ans;
+    ans.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ans[0], len, nullptr, nullptr);
+    // 去掉末尾的 '\0'（WideCharToMultiByte 返回的长度包含终止符）
+    if (!ans.empty() && ans.back() == '\0') ans.pop_back();
+    return ans;
+}
+
+std::string fontNameAnsi = utf8_to_ansi("微软雅黑");
+
 // 构造函数：一次性初始化所有元素（Button位置一次性算好，不后续修改）
 DiscardPanel::DiscardPanel(int w, int h, Player& p)
     : width(w), height(h), player(p),
@@ -20,8 +44,8 @@ DiscardPanel::DiscardPanel(int w, int h, Player& p)
     requiredDiscard(0), remaining(0), isConfirmBtnEnabled(false),
     hasImagesLoaded(false),
     // 一次性初始化Button位置（通过构造函数，不使用setPosition）
-    confirmBtn(0, 0, 120, 50, "确认弃牌", RGB(34, 139, 34)), // 绿色按钮
-    cancelBtn(0, 0, 120, 50, "重新选择", RGB(200, 50, 50))  // 红色按钮
+    confirmBtn(0, 0, 120, 50, utf8_to_ansi("确认弃牌"), RGB(34, 139, 34)), // 绿色按钮
+    cancelBtn(0, 0, 120, 50, utf8_to_ansi("重新选择"), RGB(200, 50, 50))  // 红色按钮
 {
     // 初始化选中数组为0
     for (int i = 0; i < RESOURCE_COUNT; ++i) {
@@ -30,8 +54,8 @@ DiscardPanel::DiscardPanel(int w, int h, Player& p)
     // 计算布局（对话框、资源、按钮位置）
     calculateLayout();
     // 重新初始化Button（用算好的位置，一次性到位）
-    new (&confirmBtn) Button(confirmBtn.x, confirmBtn.y, 120, 50, "确认弃牌", RGB(34, 139, 34));
-    new (&cancelBtn) Button(cancelBtn.x, cancelBtn.y, 120, 50, "重新选择", RGB(200, 50, 50));
+    new (&confirmBtn) Button(confirmBtn.x, confirmBtn.y, 120, 50, utf8_to_ansi("确认弃牌"), RGB(34, 139, 34));
+    new (&cancelBtn) Button(cancelBtn.x, cancelBtn.y, 120, 50, utf8_to_ansi("重新选择"), RGB(200, 50, 50));
 }
 
 // 加载资源图片（无图时显示美观纯色块）
@@ -109,23 +133,26 @@ void DiscardPanel::drawTexts() {
 
     // 标题（居中）
     settextcolor(WHITE);
-    settextstyle(32, 0, _T("微软雅黑"));
+    settextstyle(32, 0, fontNameAnsi.c_str());
     std::string title = "玩家" + std::to_string(player.getID()) + " - 资源弃牌";
+    title=utf8_to_ansi(title);
     int tw = textwidth(_T(title.c_str()));
     outtextxy(START_X + (DIALOG_W - tw) / 2, START_Y + 30, _T(title.c_str()));
 
     // 提示文字（动态变化）
     if (remaining > 0) {
         settextcolor(RGB(255, 100, 100)); // 亮红色
-        settextstyle(24, 0, _T("微软雅黑"));
+        settextstyle(24, 0, fontNameAnsi.c_str());
         std::string tip = "请弃掉 " + std::to_string(remaining) + " 张（共需 " + std::to_string(requiredDiscard) + " 张）";
+        tip=utf8_to_ansi(tip);
         tw = textwidth(_T(tip.c_str()));
         outtextxy(START_X + (DIALOG_W - tw) / 2, START_Y + 80, _T(tip.c_str()));
     }
     else {
         settextcolor(GREEN); // 绿色完成提示
-        settextstyle(24, 0, _T("微软雅黑"));
+        settextstyle(24, 0, fontNameAnsi.c_str());
         std::string okMsg = "已完成弃牌，请点击确认";
+        okMsg=utf8_to_ansi(okMsg);
         tw = textwidth(_T(okMsg.c_str()));
         outtextxy(START_X + (DIALOG_W - tw) / 2, START_Y + 300, _T(okMsg.c_str()));
     }
@@ -200,11 +227,11 @@ void DiscardPanel::drawButtons() {
         setfillcolor(BTN_DISABLE_MASK);
         solidroundrect(confirmBtn.x, confirmBtn.y, confirmBtn.x + 120, confirmBtn.y + 50, 8, 8);
         // 叠加深色文字（强化禁用视觉）
-        settextstyle(24, 0, _T("微软雅黑"));
+        settextstyle(24, 0, fontNameAnsi.c_str());
         settextcolor(DARK_TEXT);
         int tw = textwidth(_T("确认弃牌"));
         int th = textheight(_T("确认弃牌"));
-        outtextxy(confirmBtn.x + (120 - tw) / 2, confirmBtn.y + (50 - th) / 2, _T("确认弃牌"));
+        outtextxy(confirmBtn.x + (120 - tw) / 2, confirmBtn.y + (50 - th) / 2, _T(utf8_to_ansi("确认弃牌").c_str()));
     }
 }
 

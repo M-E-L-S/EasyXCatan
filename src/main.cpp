@@ -1,3 +1,4 @@
+//main.cpp
 #include <graphics.h>
 #include <conio.h>
 #include <windows.h>
@@ -424,6 +425,8 @@ int main() {
     screenWidth = G.screenWidth;
     initgraph(G.screenWidth, G.screenHeight);
     srand((unsigned int)time(nullptr));
+    MusicManager Music;
+    Music.play(MusicType::PANEL);
     BeginBatchDraw();
 
     loadimage(&G.LR, "resources/image/LR.png", G.screenWidth / 10, G.screenHeight / 10);

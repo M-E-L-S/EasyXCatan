@@ -4,6 +4,26 @@
 #include <cstdio>
 #include <string>
 
+static std::string utf8_to_ansi(const std::string &utf8) {
+    if (utf8.empty()) return std::string();
+    // 先从 UTF-8 转为宽字符串
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+    if (wlen == 0) return std::string();
+    std::wstring wstr;
+    wstr.resize(wlen);
+    MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wstr[0], wlen);
+
+    // 再从宽字符串转为 ANSI（CP_ACP）
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (len == 0) return std::string();
+    std::string ans;
+    ans.resize(len);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ans[0], len, nullptr, nullptr);
+    // 去掉末尾的 '\0'（WideCharToMultiByte 返回的长度包含终止符）
+    if (!ans.empty() && ans.back() == '\0') ans.pop_back();
+    return ans;
+}
+
 // 颜色常量（确保和目标UI一致）
 #define WHITE RGB(255, 255, 255)
 #define BLACK RGB(0, 0, 0)
@@ -11,17 +31,19 @@
 #define FAIL_COLOR RGB(200, 50, 50)     // 失败红色
 #define BUTTON_COLOR RGB(100, 100, 255) // 按钮蓝色
 
+std::string continuetext = utf8_to_ansi("确 定");
+
 // 构造函数：初始化布局+按钮+抢夺结果数据
 RobbedResourcePanel::RobbedResourcePanel(int w, int h, int stolenResType, int victimID)
     : width(w), height(h),
     stolenResType(stolenResType), victimID(victimID),
     hasImagesLoaded(false),
     // 初始化确认按钮（位置后续通过calculateLayout计算）
-    confirmBtn(0, 0, BUTTON_W, BUTTON_H, "确 定", BUTTON_COLOR) {
+    confirmBtn(0, 0, BUTTON_W, BUTTON_H, continuetext, BUTTON_COLOR) {
     // 计算所有元素布局（弹窗+资源+按钮居中）
     calculateLayout();
     // 一次性设置按钮位置（placement new，不修改Button类）
-    new (&confirmBtn) Button(confirmBtn.x, confirmBtn.y, BUTTON_W, BUTTON_H, "确 定", BUTTON_COLOR);
+    new (&confirmBtn) Button(confirmBtn.x, confirmBtn.y, BUTTON_W, BUTTON_H, continuetext, BUTTON_COLOR);
 }
 
 // 加载资源图片（可选）
@@ -87,7 +109,7 @@ void RobbedResourcePanel::drawDialog() {
 // 绘制标题+结果文字（完全还原目标UI的文字样式和位置）
 void RobbedResourcePanel::drawTexts() {
     setbkmode(TRANSPARENT);
-    std::string title = "抢劫结果";
+    std::string title = utf8_to_ansi("抢劫结果");
     std::string msg;
 
     // 1. 构建结果文字
@@ -108,15 +130,18 @@ void RobbedResourcePanel::drawTexts() {
         msg = "从 P" + std::to_string(victimID) + " 抢到了: " + resName;
     }
 
+    msg=utf8_to_ansi(msg);
+    std::string fontNameAnsi = utf8_to_ansi("微软雅黑");
+
     // 2. 绘制标题（居中，36号微软雅黑，颜色和边框一致）
     settextcolor((stolenResType != -1) ? SUCCESS_COLOR : FAIL_COLOR);
-    settextstyle(36, 0, _T("微软雅黑"));
+    settextstyle(36, 0, fontNameAnsi.c_str());
     int tw = textwidth(_T(title.c_str()));
     outtextxy(START_X + (DIALOG_W - tw) / 2, START_Y + 30, _T(title.c_str()));
 
     // 3. 绘制结果文字（居中，24号微软雅黑，白色）
     settextcolor(WHITE);
-    settextstyle(24, 0, _T("微软雅黑"));
+    settextstyle(36, 0, fontNameAnsi.c_str());
     tw = textwidth(_T(msg.c_str()));
 
     // 文字Y坐标：有资源则在图标下方，无资源则居中

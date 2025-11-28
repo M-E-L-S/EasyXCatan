@@ -1,3 +1,4 @@
+//PlayerLoop.h
 #pragma once
 #include <graphics.h>
 #include "Player.h"
@@ -34,14 +35,12 @@ std::string DevCardTypeToString(DevCardType card) {
  * @param state: 当前游戏状态（引用，用于切换到“建设中”状态）
  * @param lastDiceResult: 上次掷骰子点数，用于显示
  */
-enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool> tradeOptions) {
+enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>) {
 
     //  初始化面板
     GameState state = GameState:: IDLE;
-
-    //  初始化面板
     PlayerPanel panel(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
-    MusicManager Music;
+    //MusicManager Music;
     // 加载资源图片 (路径请根据你的实际项目结构调整)
     const char* resPaths[RESOURCE_COUNT] = {
         "./assets/wood.jpg",
@@ -52,19 +51,20 @@ enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector
     };
     panel.loadResourceImages(resPaths);
     panel.loadBackgroundImage("assets/player_bg.jpg");
-
+    MusicManager Music;
 
     BeginBatchDraw();
 
     bool exitLoop = false;
     ButtonTypeFromPanel btn;
+    //Music.play(MusicType::PANEL);
 
     while (!exitLoop) {
         // --- 渲染部分 ---
         cleardevice();
 
         // 调用 PlayerPanel 的绘制函数
-        Music.play(MusicType::PANEL);
+
         panel.draw(player, state, lastDiceResult);
 
         FlushBatchDraw();
@@ -114,9 +114,11 @@ enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector
                     break;
                 case ButtonTypeFromPanel::USE_DEV_CARD:
                     EndBatchDraw();
+                    Music.play(MusicType::DEV_CARD);
                     actiontype=DevCardLoop(player);
                     if(actiontype==ActionType::Knight||actiontype==ActionType::RoadBuilding)
                         return actiontype;
+                    Music.play(MusicType::PANEL);
                     BeginBatchDraw();
                     break;
 
@@ -130,16 +132,36 @@ enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector
                     break;
 
                 case ButtonTypeFromPanel::END_TURN:
-                    if (lastDiceResult == 9) {
-                        EndBatchDraw();
-                        textWindow("You got a King Crab, every Player VP++!");
-                        BeginBatchDraw();
-                        EndBatchDraw();
-                        showImageWindow("./assets/kingcrab.jpg");
-                        BeginBatchDraw();
-                    }
-                    state = GameState::END_TURN;
                     EndBatchDraw();
+                    if (lastDiceResult == 9) {
+
+                        for (int i=0;i<RESOURCE_COUNT;i++)
+                            player.addResource(ResourceType(i),1 );
+
+                        textWindow("You got a King Crab, every resource ++!");
+
+                        showImageWindow("./assets/kingcrab.jpg");
+
+                    }
+                    if (lastDiceResult == 1) {
+
+                        for (int i=0;i<BUILDING_COUNT;i++)
+                            player.removeBuilding(BuildingType(i));
+
+                        textWindow("Anonymous experts took your VP away!");
+
+                        showImageWindow("./assets/anonymous.png");
+
+                    }
+                    if (lastDiceResult == 8) {
+                        Music.play(MusicType::MANBA);
+                        showImageWindow("./assets/manba.png");
+                        Music.play(MusicType::PANEL);
+
+                    }
+
+                    state = GameState::END_TURN;
+
                     return ActionType::EndTurn;;
                     exitLoop = true;
                     break;
@@ -152,7 +174,7 @@ enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector
                         state = GameState::AWAITING_MAP_CLICK_FOR_ROAD;
                         exitLoop = true;
                         EndBatchDraw();
-                        return ActionType::BuildRoad;;
+                        return ActionType::BuildRoad;
                     }
                     else {
                         EndBatchDraw();
@@ -202,6 +224,6 @@ enum class ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector
 
         Sleep(16);
     }
-
+	Music.stop();
     EndBatchDraw();
 }

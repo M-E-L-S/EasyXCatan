@@ -1,3 +1,4 @@
+//BGMusic.h
 #pragma once
 #include <string>
 #include <windows.h>
@@ -8,7 +9,9 @@ enum class MusicType {
     NONE,
     PANEL,
     BANK,
-    HARBOR
+    HARBOR,
+    DEV_CARD,
+    MANBA
 };
 
 class MusicManager {
@@ -17,9 +20,11 @@ private:
 
     std::string getMusicPath(MusicType type) {
         switch (type) {
-            case MusicType::PANEL: return "./assets/music/panel.wav";
-            case MusicType::BANK:     return "./assets/music/bank.mp3";
+            case MusicType::PANEL: return "./assets/music/panel.mp3";//
+            case MusicType::BANK:     return "./assets/music/bank.mp3";//
             case MusicType::HARBOR:       return "./assets/music/harbor.mp3";
+            case MusicType::DEV_CARD:       return "./assets/music/devcard.wav";//
+            case MusicType::MANBA:       return "./assets/music/manba.mp3";
             default: return "";
         }
     }
@@ -53,13 +58,9 @@ public:
             mciSendString("play MusicBGM repeat", NULL, 0, NULL);
 
         }
-        else if (path.length() >= 4 && path.substr(path.length() - 4) == ".wav") {
+        else {
             // 使用 PlaySound 播放 WAV
             PlaySound(path.c_str(), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
-        }
-        else {
-            // 文件格式未知
-            std::cerr << "Error: Unsupported audio file format: " << path << std::endl;
         }
     }
 

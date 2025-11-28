@@ -142,18 +142,18 @@ bool Player::hasDevCard(DevCardType type) const {
 void Player::addResource(ResourceType type, int amount)
 {
     if (type >= 0 && type < RESOURCE_COUNT && amount > 0)
-        resourceNumber[type] += amount;
+        this->resourceNumber[type] += amount;
 }
 void Player::removeResource(ResourceType type, int amount)
 {
     if (type >= 0 && type < RESOURCE_COUNT && amount > 0)
     {
-        if (resourceNumber[type] >= amount)
-            resourceNumber[type] -= amount;
+        if (this->resourceNumber[type] >= amount)
+            this->resourceNumber[type] -= amount;
         else
             // 在一個真實的遊戲中，我們不應該讓這種情況發生
             // 但作為安全防護，我們最多只把它減到 0
-            resourceNumber[type] = 0;
+            this->resourceNumber[type] = 0;
     }
 }
 
@@ -170,11 +170,12 @@ void Player::removeDevCard(DevCardType type) {
 
 void Player::addBuilding(BuildingType type)
 {
-    buildingNumber[type]++;
+    this->buildingNumber[type]++;
 }
 void Player::removeBuilding(BuildingType type)
 {
-    buildingNumber[type]--;
+    if (this->buildingNumber[type] > 0)
+    this->buildingNumber[type]--;
 }
 
 
@@ -186,13 +187,13 @@ void Player::payForDevCard()
 }
 void Player::payForBuilding(BuildingType type)
 {
-    if (type < 0 || type >= BUILDING_COUNT) return;
+    //if (type < 0 || type >= BUILDING_COUNT) return;
     // 遍历 5 种资源
     for (int i = 0; i < RESOURCE_COUNT; ++i) {
         // 获取该建筑对该资源的消耗量
         int cost = BUILDING_COSTS[type][i];
         if (cost > 0)
-            removeResource((ResourceType)i, cost);
+            this->removeResource((ResourceType)i, cost);
     }
 }
 
