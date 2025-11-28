@@ -174,7 +174,7 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
                         state = GameState::AWAITING_MAP_CLICK_FOR_ROAD;
                         exitLoop = true;
                         EndBatchDraw();
-                        return ActionType::BuildRoad;;
+                        return ActionType::BuildRoad;
                     }
                     else {
                         EndBatchDraw();
