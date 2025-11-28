@@ -64,8 +64,8 @@ void Resources_Discard() {
 // 补全后的 Resources_Discard（玩家抽资源，完美对接 RobbedResourcePanel）
 void Resources_Discard(int playerId, int victim) {
     // 1. 获取玩家实例（你已有 getplayer 函数，无需修改）
-    Player& currentPlayer = getPlayer(playerId);
-    Player& victimPlayer = getPlayer(victim);
+    Player& currentPlayer = getPlayer(playerId-1);
+    Player& victimPlayer = getPlayer(victim-1);
 
     // 2. 调用偷资源函数：获取抢夺结果（返回值 = -1=失败，0-4=资源序号，对应面板的 stolenResType）
     int stolenResIdx = RobberManager::stealResource(currentPlayer, victimPlayer);
