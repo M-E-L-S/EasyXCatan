@@ -47,7 +47,6 @@ public: // 外部可以访问的
 
     // 特殊奖项(需要map统计调用该接口修改是否有最x的xx)
     void setHasLongestRoad(bool hasIt);
-    void setHasLargestArmy(bool hasIt);
     void setHasHarbor(bool hasIt);
 
     // 计算需要弃牌的数量（逻辑不变，底层用数组求和）

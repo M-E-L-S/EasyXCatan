@@ -101,23 +101,7 @@ bool DevCardManager::UseKnight(Player& player, std::vector<Player>& allPlayers) 
     player.addUsedKnight(); // Player 内部维护 usedKnightNumber
 
     // 检查是否触发最大骑士数变化
-    int maxKnights = 0;
-    int ownerID = -1;
-    for (auto& p : allPlayers) {
-        if (p.getKnightCount() > maxKnights) {
-            maxKnights = p.getKnightCount();
-            ownerID = p.getID();
-        }
-    }
 
-    // 如果有新的最大骑士数且 >= 3，更新玩家状态
-    if (maxKnights >= 3) {
-        for (auto& p : allPlayers) {
-            p.setHasLargestArmy(p.getID() == ownerID);
-        }
-        return true;
-    }
-    return false;
 }
 
 ResourceType DevCardManager::Monopoly(int playerID, ResourceType type,

@@ -10,7 +10,6 @@ add_executable(EasyX_Project src/main.cpp
         src/BankPanel.cpp
         src/DevCardManager.cpp
         src/DevCardPanel.cpp
-        src/DevCardShow.cpp
         src/DiscardPanel.cpp
         src/HarborPanel.cpp
         src/Player.cpp
@@ -24,7 +23,6 @@ add_executable(EasyX_Project src/main.cpp
         include/BankPanel.h
         include/DevCardManager.h
         include/DevCardPanel.h
-        include/DevCardShow.h
         include/DiscardPanel.h
         include/HarborPanel.h
         include/Player.h

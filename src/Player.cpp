@@ -239,10 +239,6 @@ bool Player::discardResources(const int discardArray[RESOURCE_COUNT]) {
 }
 
 
-void Player::setHasLargestArmy(bool hasIt)
-{
-    this->hasLargestArmy = hasIt;
-}
 void Player::setHasLongestRoad(bool hasIt)
 {
     this->hasLongestRoad = hasIt;

@@ -53,11 +53,6 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
     panel.loadBackgroundImage("assets/player_bg.jpg");
     MusicManager Music;
 
-    int hasHarbor = 0;
-    for (int i = 1; i < 7; i++)
-        hasHarbor+=opts[i];
-    player.setHasHarbor(hasHarbor>0);
-
     BeginBatchDraw();
 
     bool exitLoop = false;
