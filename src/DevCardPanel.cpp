@@ -19,8 +19,9 @@ DevCardPanel::DevCardPanel(int startX, int startY)
     hasBackgroundLoaded(false),
     confirmButton(0, 0, 80, 35, "confirm", RGB(50, 200, 50)),
     cancelButton(0, 0, 80, 35, "cancel", RGB(200, 50, 50)),
-    backButton(0, 0, BTN_W, BTN_H, "back", RGB(150, 150, 150))
+    backButton(0, 0, BTN_W, BTN_H, "BACK", RGB(150, 150, 150))
 {
+    // --- 卡牌按钮初始化逻辑 ---
     struct CardInfo {
         DevCardType t;
         const char* name;
@@ -33,7 +34,7 @@ DevCardPanel::DevCardPanel(int startX, int startY)
             { ROAD_BUILDING,  "USE",      RGB(195,171,140),   true },
             { YEAR_OF_PLENTY, "USE",      RGB(195,171,140),   true },
             { MONOPOLY,       "USE",      RGB(195,171,140),   true },
-            { VICTORY_POINT,  "USE",      RGB(195,171,140),  false }
+            { VICTORY_POINT,  "USE",    RGB(195,171,140),  false }
     };
 
     for (int i = 0; i < 5; i++) {
@@ -47,10 +48,10 @@ DevCardPanel::DevCardPanel(int startX, int startY)
         int currentY = panelY;
 
         if (info.hasButton) {
-            d.useButton = Button(currentX, currentY + 25, BTN_W, BTN_H, d.name, info.color);
+            d.useButton = Button(currentX, currentY + 25, BTN_W, BTN_H, d.name.c_str(), info.color);
         }
         else {
-            d.useButton = Button();  // 空按钮
+            d.useButton = Button();
         }
 
         d.countX = currentX + 20;
@@ -59,14 +60,14 @@ DevCardPanel::DevCardPanel(int startX, int startY)
         cardDisplays.push_back(d);
     }
 
-    int backBtnX = 1300;
-    int backBtnY = panelY + 25;
+    int backBtnX = 1300; // 假设位置
+    int backBtnY = panelY + 25; // 假设位置
 
     backButton.x = backBtnX;
     backButton.y = backBtnY;
     backButton.w = BTN_W;
     backButton.h = BTN_H;
-    backButton.text = "Back";
+    backButton.text = "BACK";
     backButton.color = RGB(100, 100, 100);
     backButton.enabled = true;
 }
@@ -93,14 +94,14 @@ void DevCardPanel::update(const Player& player, const DevCardManager& manager)
     backButton.enabled = true;
 }
 
-// 【已修改】drawCard 实现：按钮始终绘制，高亮仅在未选中时绘制，选中时绘制常亮边框
+
 void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manager, const Player& player, int mouseX, int mouseY)
 {
     if (d.type == VICTORY_POINT) {
         return;
     }
 
-    // 【关键修改 1】: 无论是否选中卡牌，只要不是 Victory Point，都绘制按钮
+    // ... Draw logic ...
     d.useButton.draw();
 
     int btnX = d.useButton.x;
@@ -116,11 +117,9 @@ void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manag
 
         // 如果悬停且按钮可用，绘制高亮效果
         if (isHover && d.useButton.enabled) {
-            // 绘制半透明覆盖
-            setfillcolor(0x33FFFFFF); // 半透明白色
+            setfillcolor(0x33FFFFFF);
             solidrectangle(btnX, btnY, btnX + btnW, btnY + btnH);
 
-            // 绘制边框
             setlinecolor(HIGHLIGHT_COLOR);
             setlinestyle(PS_SOLID, 3);
             rectangle(btnX, btnY, btnX + btnW, btnY + btnH);
@@ -130,11 +129,11 @@ void DevCardPanel::drawCard(const DevCardDisplay& d, const DevCardManager& manag
     // --- 2. 选中常亮边框逻辑：卡牌被选中时 (确认框弹出时) ---
     if (selectedCardType == d.type) {
 
-        setlinecolor(SELECTED_COLOR); // 亮橙色
-        setlinestyle(PS_SOLID, 5); // 更粗的边框
-        // 绘制一个比按钮稍大的边框，突出选中效果
+        setlinecolor(SELECTED_COLOR);
+        setlinestyle(PS_SOLID, 5);
         rectangle(btnX - 2, btnY - 2, btnX + btnW + 2, btnY + btnH + 2);
     }
+    setlinestyle(PS_SOLID, 1); // 恢复默认线型
 }
 
 void DevCardPanel::setupConfirmButtons(int x, int y)
@@ -143,9 +142,11 @@ void DevCardPanel::setupConfirmButtons(int x, int y)
     confirmButton.y = y;
     cancelButton.x = x + confirmButton.w + 15;
     cancelButton.y = y;
+    confirmButton.text = "confirm";
+    cancelButton.text = "cancel";
 }
 
-// 【已修改】draw 函数实现：返回按钮始终绘制，高亮仅在未选中时绘制
+
 void DevCardPanel::draw(const DevCardManager& manager, const Player& player, int mouseX, int mouseY)
 {
     if (!visible) return;
@@ -154,37 +155,12 @@ void DevCardPanel::draw(const DevCardManager& manager, const Player& player, int
         putimage(0, 0, &backgroundImage);
     }
 
-    // 传入 mouseX, mouseY 到 drawCard
     for (auto& d : cardDisplays)
         drawCard(d, manager, player, mouseX, mouseY);
 
-    // 【关键修改 2】: 无论是否选中卡牌，都绘制返回按钮
     backButton.draw();
 
-    // --- 悬停高亮逻辑：只有在未弹出确认框时才启用 ---
-    if (selectedCardType == (DevCardType)-1) {
-
-        // --- 返回按钮悬停高亮逻辑 ---
-        int btnX = backButton.x;
-        int btnY = backButton.y;
-        int btnW = backButton.w;
-        int btnH = backButton.h;
-
-        bool isHover = (mouseX >= btnX && mouseX <= btnX + btnW &&
-            mouseY >= btnY && mouseY <= btnY + btnH);
-
-        if (isHover && backButton.enabled) {
-            setfillcolor(0x33FFFFFF);
-            solidrectangle(btnX, btnY, btnX + btnW, btnY + btnH);
-
-            setlinecolor(HIGHLIGHT_COLOR);
-            setlinestyle(PS_SOLID, 3);
-            rectangle(btnX, btnY, btnX + btnW, btnY + btnH);
-        }
-    }
-    setlinestyle(PS_SOLID, 1); // 恢复默认线型
-
-    // 绘制确认/取消浮动框 (逻辑不变，它只在 selectedCardType != -1 时绘制)
+    // 绘制卡牌确认/取消浮动框
     if (selectedCardType != (DevCardType)-1) {
 
         int X = getwidth() / 2 - 130;
@@ -194,8 +170,8 @@ void DevCardPanel::draw(const DevCardManager& manager, const Player& player, int
         bar(X, Y, X + 260, Y + 110);
 
         setcolor(WHITE);
-        settextstyle(18, 0, _T("宋体"));
-        outtextxy(X + 20, Y + 15, "确认使用这张卡牌吗？");
+        settextstyle(18, 0, _T("Arial Black"));
+        outtextxy(X + 20, Y + 15, "Are you sure you want to use this card?");
 
         setupConfirmButtons(X + 25, Y + 55);
         confirmButton.draw();
@@ -212,7 +188,7 @@ int DevCardPanel::handleClick(int mx, int my)
         if (confirmButton.isClicked(mx, my)) {
             DevCardType t = selectedCardType;
             selectedCardType = (DevCardType)-1;
-            return (int)t;
+            return (int)t; // 直接返回卡牌类型
         }
         if (cancelButton.isClicked(mx, my)) {
             selectedCardType = (DevCardType)-1;
@@ -224,8 +200,8 @@ int DevCardPanel::handleClick(int mx, int my)
     // 2. 正常模式，检测卡牌
     for (auto& d : cardDisplays) {
         if (d.useButton.enabled && d.useButton.isClicked(mx, my)) {
-            selectedCardType = d.type; // 设置选中类型，下次 draw() 时会显示确认框
-            return -1;
+            selectedCardType = d.type; // 设置选中类型
+            return -1; // 停留在 loop，等待确认/取消
         }
     }
 
@@ -236,6 +212,7 @@ int DevCardPanel::handleClick(int mx, int my)
 
     return -1;
 }
+
 
 void DevCardPanel::loadBackgroundImage(const char* filePath, int optionalWidth, int optionalHeight) {
     if (optionalWidth > 0 && optionalHeight > 0) {

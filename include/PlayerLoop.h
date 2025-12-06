@@ -93,7 +93,7 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
                 case ButtonTypeFromPanel::TRADE_HARBOR:
                     // 暂时结束当前批量绘图，以免子循环冲突
                     EndBatchDraw();
-                    Music.play(MusicType::HARBOR);
+                    Music.play(MusicType::BANK);
                     EnterHarborMode(player);
                     Music.play(MusicType::PANEL);
                     BeginBatchDraw();

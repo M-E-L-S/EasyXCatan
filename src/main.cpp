@@ -175,10 +175,8 @@ void HandleDiceRoll(const MouseEvent &evt){
     if (evt.leftDown) {
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
-        //UI_DiceRowing(d1, d2);
-        //G.diceRoll = d1 + d2;
-        UI_DiceRowing(3,4);
-        G.diceRoll = 7;
+        UI_DiceRowing(d1, d2);
+        G.diceRoll = d1 + d2;
 
         if (G.diceRoll == 7) {
             Resources_Discard();
