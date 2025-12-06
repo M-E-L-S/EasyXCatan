@@ -35,7 +35,7 @@ std::string DevCardTypeToString(DevCardType card) {
  * @param state: 当前游戏状态（引用，用于切换到“建设中”状态）
  * @param lastDiceResult: 上次掷骰子点数，用于显示
  */
-enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>) {
+enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool> opts) {
 
     //  初始化面板
     GameState state = GameState:: IDLE;
@@ -52,6 +52,11 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
     panel.loadResourceImages(resPaths);
     panel.loadBackgroundImage("assets/player_bg.jpg");
     MusicManager Music;
+
+    int hasHarbor = 0;
+    for (int i = 1; i < 7; i++)
+        hasHarbor+=opts[i];
+    player.setHasHarbor(hasHarbor>0);
 
     BeginBatchDraw();
 
@@ -94,7 +99,7 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
                     // 暂时结束当前批量绘图，以免子循环冲突
                     EndBatchDraw();
                     Music.play(MusicType::BANK);
-                    EnterHarborMode(player);
+                    EnterHarborMode(player, opts);
                     Music.play(MusicType::PANEL);
                     BeginBatchDraw();
                     break;

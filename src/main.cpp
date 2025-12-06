@@ -362,7 +362,7 @@ void HandleTurnStart(const MouseEvent & evt) {
     UI_DrawHUD();
 
     if (UI_SwitchToPlayerPanel(evt)){
-        auto player = getPlayer(G.currentPlayer - 1);
+        Player& player = getPlayer(G.currentPlayer - 1);
         const auto act = PlayerLoop(player, G.diceRoll, G.map->GetTradeOption(G.currentPlayer));
         switch (act){
             case ActionType::BuildRoad:

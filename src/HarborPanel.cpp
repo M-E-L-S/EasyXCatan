@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <tchar.h>
 #include <string>
+#include <sstream>
 
 // --- 资源名称定义 ---
 static const TCHAR* RES_NAMES[] = {
@@ -12,13 +13,34 @@ static const TCHAR* RES_NAMES[] = {
 static const int ICON_SIZE = 100;  // 图标大一点，适应全屏
 static const int ICON_GAP = 60;    // 图标之间的间距
 
-HarborPanel::HarborPanel(int screenWidth, int screenHeight)
+// Helper: map resource index -> tradeOptions index for specific 2:1
+// tradeOptions layout: [4:1, 3:1, 木材2:1, 砖块2:1, 矿石2:1, 羊毛2:1, 粮食2:1]
+// resourceIndex: 0=Wood,1=Brick,2=Sheep,3=Wheat,4=Ore
+static int resourceIndexToTradeOptionsIdx(int resIdx) {
+    // mapping based on the order provided by user:
+    // tradeOptions[2] -> Wood
+    // tradeOptions[3] -> Brick
+    // tradeOptions[4] -> Ore
+    // tradeOptions[5] -> Sheep
+    // tradeOptions[6] -> Wheat
+    switch (resIdx) {
+    case 0: return 2; // Wood
+    case 1: return 3; // Brick
+    case 2: return 5; // Sheep
+    case 3: return 6; // Wheat
+    case 4: return 4; // Ore
+    default: return -1;
+    }
+}
+
+HarborPanel::HarborPanel(int screenWidth, int screenHeight, const std::vector<bool>& tradeOptions)
     : width(screenWidth), height(screenHeight),
-    selectedGiveType(-1), hasImagesLoaded(false), hasBgLoaded(false)
+    selectedGiveType(-1), hasImagesLoaded(false), hasBgLoaded(false),
+    tradeOptions(tradeOptions)
 {
     for (int i = 0; i < RESOURCE_COUNT; i++) getQuantities[i] = 0;
 
-    // 按钮布局：放在屏幕底部居中
+    // 按钮布局：放在屏幕底部居中 (保留原始魔数，和原来行为一致)
     int btnW = 200;
     int btnH = 70;
     int btnX = 740;
@@ -80,6 +102,26 @@ void HarborPanel::drawArtisticText(int x, int y, const TCHAR* text, int size, CO
     outtextxy(x - 1, y - 1, text);
 }
 
+// 返回 2/3/4 表示该资源的兑换率，返回 0 表示当前不可兑换
+int HarborPanel::getRateForResource(int resourceIndex) const {
+    // safety: ensure tradeOptions has at least 7 elements; if not, fall back to default 4:1
+    bool has4 = false, has3 = false;
+    if (tradeOptions.size() >= 1) has4 = tradeOptions[0];
+    if (tradeOptions.size() >= 2) has3 = tradeOptions[1];
+
+    int specificIdx = resourceIndexToTradeOptionsIdx(resourceIndex);
+    bool hasSpecific = false;
+    if (specificIdx >= 0 && (size_t)specificIdx < tradeOptions.size()) {
+        hasSpecific = tradeOptions[specificIdx];
+    }
+
+    if (hasSpecific) return 2;
+    if (has3) return 3;
+    if (has4) return 4;
+    // no applicable port
+    return 0;
+}
+
 void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
     // 1. 绘制全屏背景
     if (hasBgLoaded) {
@@ -99,27 +141,54 @@ void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
     const TCHAR* title = _T("Harbor RESOURCE EXCHANGE");
     settextstyle(50, 0, _T("Arial Black"));
     int titleW = textwidth(title);
-    drawArtisticText((width - titleW) / 2-270, 50, title, 100);
+    // remove magic offset and center based on titleW (keeps baseline left shift small)
+    drawArtisticText((width - titleW) / 2, 50, title, 50);
 
     // 3. 计算垂直布局 Y 坐标
     int getY = height * 0.25;      // GET区在屏幕 1/4 处
     int middleY = height * 0.45;   // 汇率在中间
     int giveY = height * 0.60;     // GIVE区在屏幕 3/5 处
 
-    // 4. 绘制中间汇率 (屏幕居中)
-    const TCHAR* rateText = _T("Exchange Rate 3 : 1");
-    settextstyle(30, 0, _T("Arial Black"));
-    int rateW = textwidth(rateText);
-    drawArtisticText((width - rateW) / 2, middleY, rateText, 30, RGB(220, 20, 60));
+    // 计算总花费 (按数量)
+    int totalGetCount = 0;
+    for (int n : getQuantities) totalGetCount += n;
+
+    // 4. 中心汇率显示：
+    // 如果已经选中支出资源，则显示该资源对应的汇率；否则显示可用港口概览
+    TCHAR rateBuf[128];
+    if (selectedGiveType != -1) {
+        int rate = getRateForResource(selectedGiveType);
+        if (rate > 0) {
+            _stprintf_s(rateBuf, _T("Exchange Rate %d : 1"), rate);
+        } else {
+            _stprintf_s(rateBuf, _T("Exchange Not Available for %s"), RES_NAMES[selectedGiveType]);
+        }
+        settextstyle(30, 0, _T("Arial Black"));
+        int rateW = textwidth(rateBuf);
+        drawArtisticText((width - rateW) / 2, middleY, rateBuf, 30, RGB(220, 20, 60));
+    } else {
+        // 显示可用港口概览
+        std::basic_ostringstream<TCHAR> legend;
+        legend << _T("Available Ports:");
+        if (tradeOptions.size() >= 7) {
+            if (tradeOptions[2]) legend << _T(" Wood(2:1)");
+            if (tradeOptions[3]) legend << _T(" Brick(2:1)");
+            if (tradeOptions[4]) legend << _T(" Ore(2:1)");
+            if (tradeOptions[5]) legend << _T(" Sheep(2:1)");
+            if (tradeOptions[6]) legend << _T(" Wheat(2:1)");
+        }
+        if (tradeOptions.size() >= 2 && tradeOptions[1]) legend << _T(" 3:1");
+        if (tradeOptions.size() >= 1 && tradeOptions[0]) legend << _T(" 4:1");
+
+        std::basic_string<TCHAR> legendStr = legend.str();
+        settextstyle(22, 0, _T("Arial"));
+        int legendW = textwidth(legendStr.c_str());
+        drawArtisticText((width - legendW) / 2, middleY, legendStr.c_str(), 22, RGB(70,70,70));
+    }
 
     // 5. 计算图标行的水平起始位置 (确保5个图标整体居中)
     int totalRowWidth = 5 * ICON_SIZE + 4 * ICON_GAP;
     int startX = (width - totalRowWidth) / 2;
-
-    // 计算总花费
-    int totalGetCount = 0;
-    for (int n : getQuantities) totalGetCount += n;
-    int costNeeded = (totalGetCount == 0) ? 4 : (totalGetCount * 4);
 
     // --- 循环绘制资源 ---
     for (int i = 0; i < RESOURCE_COUNT; i++) {
@@ -154,7 +223,23 @@ void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
 
         // ================= GIVE 区 (下方) =================
         int playerRes = player.getResourceCount((ResourceType)i);
-        bool canAfford = (playerRes >= costNeeded);
+
+        // 计算该资源对应的实际兑换率（2/3/4/0）
+        int rateForThis = getRateForResource(i);
+
+        // 计算当前选择的目标数总和的所需成本（依据 rateForThis）
+        int costNeededForThis;
+        if (totalGetCount == 0) {
+            // 若没有选择任何 GET 单位，按单个单位的费率来显示是否可用/可选
+            costNeededForThis = (rateForThis > 0) ? rateForThis : INT_MAX;
+        } else {
+            if (rateForThis > 0)
+                costNeededForThis = totalGetCount * rateForThis;
+            else
+                costNeededForThis = INT_MAX;
+        }
+
+        bool canAfford = (playerRes >= costNeededForThis);
         bool hoverGive = (mouseX >= xPos && mouseX <= xPos + ICON_SIZE && mouseY >= giveY && mouseY <= giveY + ICON_SIZE);
 
         // 绘制图标
@@ -162,22 +247,44 @@ void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
         else { setfillcolor(BLACK); solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE); }
 
         // 状态效果
-        if (!canAfford) {
+        if (rateForThis == 0) {
+            // 不可兑换 -> 置灰并标示
             setfillcolor(0xAA000000); // 置灰
             solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+
+            // 显示 "N/A"
+            settextstyle(18, 0, _T("Arial"));
+            settextcolor(RGB(150, 150, 150));
+            outtextxy(xPos + (ICON_SIZE - textwidth(_T("N/A"))) / 2, giveY + ICON_SIZE / 2 - 10, _T("N/A"));
         }
         else {
-            if (hoverGive) {
-                setfillcolor(0x44FFFFFF); solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
-                setlinecolor(WHITE); setlinestyle(PS_SOLID, 2); rectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+            if (!canAfford) {
+                // 不满足资源数量 -> 半透明灰
+                setfillcolor(0xAA000000);
+                solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+            } else {
+                if (hoverGive) {
+                    setfillcolor(0x44FFFFFF); solidrectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+                    setlinecolor(WHITE); setlinestyle(PS_SOLID, 2); rectangle(xPos, giveY, xPos + ICON_SIZE, giveY + ICON_SIZE);
+                }
+                if (selectedGiveType == i) {
+                    setlinecolor(RGB(255, 215, 0)); setlinestyle(PS_SOLID, 5);
+                    rectangle(xPos - 4, giveY - 4, xPos + ICON_SIZE + 4, giveY + ICON_SIZE + 4);
+                }
             }
-            if (selectedGiveType == i) {
-                setlinecolor(RGB(255, 215, 0)); setlinestyle(PS_SOLID, 5);
-                rectangle(xPos - 4, giveY - 4, xPos + ICON_SIZE + 4, giveY + ICON_SIZE + 4);
-            }
+
+            // 在 GIVE 图标上角显示费率小角标 (例如 "2:1")
+            TCHAR badge[16];
+            _stprintf_s(badge, _T("%d:1"), rateForThis);
+            settextstyle(18, 0, _T("Arial"));
+            settextcolor(RGB(255, 255, 255));
+            // badge 背景
+            setfillcolor(RGB(80, 80, 80));
+            solidrectangle(xPos + ICON_SIZE - 44, giveY + 6, xPos + ICON_SIZE - 6, giveY + 30);
+            outtextxy(xPos + ICON_SIZE - 42, giveY + 8, badge);
         }
 
-        // 文字
+        // 文字: 数量
         TCHAR giveBuf[32];
         _stprintf_s(giveBuf, _T("%s: %d"), RES_NAMES[i], playerRes);
         settextstyle(20, 0, _T("Arial"));
@@ -188,7 +295,14 @@ void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
 
     // 6. 按钮状态
     bool isValid = (selectedGiveType != -1 && totalGetCount > 0);
-    if (isValid && player.getResourceCount((ResourceType)selectedGiveType) < totalGetCount * 4) isValid = false;
+    if (isValid) {
+        int rateSelected = getRateForResource(selectedGiveType);
+        if (rateSelected <= 0) isValid = false;
+        else {
+            int cost = totalGetCount * rateSelected;
+            if (player.getResourceCount((ResourceType)selectedGiveType) < cost) isValid = false;
+        }
+    }
 
     btnConfirm->enabled = isValid;
     btnConfirm->color = isValid ? RGB(255, 140, 0) : RGB(100, 100, 100);
@@ -198,6 +312,7 @@ void HarborPanel::draw(const Player& player, int mouseX, int mouseY) {
 }
 
 bool HarborPanel::handleInput(ExMessage& msg, Player& player) {
+    // 先确保我们只在鼠标消息中使用 msg.x/msg.y
     int mouseX = msg.x;
     int mouseY = msg.y;
 
@@ -209,8 +324,9 @@ bool HarborPanel::handleInput(ExMessage& msg, Player& player) {
             ResourceType give = (ResourceType)selectedGiveType;
             int totalGet = 0;
             for (int n : getQuantities) totalGet += n;
-            if (player.getResourceCount(give) >= totalGet * 4) {
-                player.removeResource(give, totalGet * 4);
+            int rate = getRateForResource(selectedGiveType);
+            if (rate > 0 && totalGet > 0 && player.getResourceCount(give) >= totalGet * rate) {
+                player.removeResource(give, totalGet * rate);
                 for (int i = 0; i < RESOURCE_COUNT; i++)
                     if (getQuantities[i] > 0) player.addResource((ResourceType)i, getQuantities[i]);
                 // 重置
@@ -240,8 +356,9 @@ bool HarborPanel::handleInput(ExMessage& msg, Player& player) {
         if (mouseX >= x && mouseX <= x + ICON_SIZE && mouseY >= giveY && mouseY <= giveY + ICON_SIZE) {
             if (msg.message == WM_LBUTTONDOWN) {
                 int totalGet = 0; for (int n : getQuantities) totalGet += n;
-                int cost = (totalGet == 0) ? 4 : (totalGet * 4);
-                if (player.getResourceCount((ResourceType)i) >= cost) selectedGiveType = i;
+                int rate = getRateForResource(i);
+                int cost = (totalGet == 0) ? (rate > 0 ? rate : INT_MAX) : (rate > 0 ? totalGet * rate : INT_MAX);
+                if (rate > 0 && player.getResourceCount((ResourceType)i) >= cost) selectedGiveType = i;
             }
             else if (msg.message == WM_RBUTTONDOWN && selectedGiveType == i) {
                 selectedGiveType = -1;

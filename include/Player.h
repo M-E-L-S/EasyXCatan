@@ -48,6 +48,7 @@ public: // 外部可以访问的
     // 特殊奖项(需要map统计调用该接口修改是否有最x的xx)
     void setHasLongestRoad(bool hasIt);
     void setHasLargestArmy(bool hasIt);
+    void setHasHarbor(bool hasIt);
 
     // 计算需要弃牌的数量（逻辑不变，底层用数组求和）
     int getDiscardCount() const;
@@ -71,5 +72,5 @@ private: // 只有 Player 类内部能访问
     bool hasLongestRoad; // 拥有最长道路 (2分)
     bool hasLargestArmy; // 拥有最大军队 (2分)
     bool hasHarbor_;
-
+    static int max_Knight;
 };
