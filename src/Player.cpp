@@ -253,7 +253,7 @@ void Player::addUsedKnight() {
 
 // 查询是否拥有最大骑士数
 bool Player::getHasLargestArmy() const {
-    return this->usedKnightNumber==max_Knight;
+    return this->usedKnightNumber==max_Knight&&max_Knight!=0;
 }
 
 bool Player::hasHarbor() const {
