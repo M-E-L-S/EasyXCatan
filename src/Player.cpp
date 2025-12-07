@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "TextWindow.h"
 
 
 // --- 构造函数 ---
@@ -14,7 +15,7 @@ Player::Player(int id, COLORREF playerColor) :
     hasLongestRoad(false),
     hasLargestArmy(false)
 {
-    hasHarbor_ = true;
+    hasHarbor_ = false;
     // 2. 构造函数体
     //    在这里初始化数组，或者执行更复杂的逻辑
 
@@ -108,19 +109,19 @@ bool Player::canAffordBuilding(BuildingType type) const
     {
         case ROAD:
             // 路：1 木 + 1 磚
-            return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1);
+            return (this->getResourceCount(WOOD) >= 1 && this->getResourceCount(BRICK) >= 1);
 
         case SETTLEMENT:
             // 村莊：1 木 + 1 磚 + 1 羊 + 1 麥
-            return (resourceNumber[WOOD] >= 1 && resourceNumber[BRICK] >= 1 &&
-                    resourceNumber[SHEEP] >= 1 && resourceNumber[WHEAT] >= 1);
+            return (this->getResourceCount(WOOD) >= 1 && this->getResourceCount(BRICK) >= 1 &&
+                    this->getResourceCount(SHEEP) >= 1 && this->getResourceCount(WHEAT) >= 1);
 
         case CITY:
             // !! 關鍵邏輯 !!
             // 城市：3 礦 + 2 麥
             // 需要地图端确认选择的地方是否有村庄
-            return (resourceNumber[ORE] >= 3 && resourceNumber[WHEAT] >= 2 &&
-                    buildingNumber[SETTLEMENT] > 0);
+            return (this->getResourceCount(ORE) >= 3 && this->getResourceCount(BRICK) >= 2 &&
+                    this->buildingNumber[SETTLEMENT] > 0);
     }
 
     // 如果傳入無效的類型
@@ -238,10 +239,6 @@ bool Player::discardResources(const int discardArray[RESOURCE_COUNT]) {
 }
 
 
-void Player::setHasLargestArmy(bool hasIt)
-{
-    this->hasLargestArmy = hasIt;
-}
 void Player::setHasLongestRoad(bool hasIt)
 {
     this->hasLongestRoad = hasIt;
@@ -250,13 +247,22 @@ void Player::setHasLongestRoad(bool hasIt)
 // 增加已使用骑士卡数量
 void Player::addUsedKnight() {
     usedKnightNumber++;
+    if (usedKnightNumber > max_Knight)
+        max_Knight = usedKnightNumber;
 }
 
 // 查询是否拥有最大骑士数
 bool Player::getHasLargestArmy() const {
-    return hasLargestArmy;
+    return this->usedKnightNumber==max_Knight&&max_Knight!=0;
 }
 
 bool Player::hasHarbor() const {
     return hasHarbor_;
 }
+
+void Player::setHasHarbor(bool hasIt) {
+    this->hasHarbor_ = hasIt;
+}
+
+int Player::max_Knight=0;
+

@@ -10,7 +10,6 @@ add_executable(EasyX_Project src/main.cpp
         src/BankPanel.cpp
         src/DevCardManager.cpp
         src/DevCardPanel.cpp
-        src/DevCardShow.cpp
         src/DiscardPanel.cpp
         src/HarborPanel.cpp
         src/Player.cpp
@@ -18,12 +17,12 @@ add_executable(EasyX_Project src/main.cpp
         src/RobbedResourcePanel.cpp
         src/RobberManager.cpp
         src/StartGameUI.cpp
+        src/TextWindow.cpp
         include/map.h
         include/enumclass.h
         include/BankPanel.h
         include/DevCardManager.h
         include/DevCardPanel.h
-        include/DevCardShow.h
         include/DiscardPanel.h
         include/HarborPanel.h
         include/Player.h
@@ -41,6 +40,7 @@ add_executable(EasyX_Project src/main.cpp
         include/Common.h
         include/imageWindow.h
         include/Random.h
+        include/TextWindow.h
 )
 
 target_link_libraries(EasyX_Project libeasyx.a easyx winmm MSIMG32)

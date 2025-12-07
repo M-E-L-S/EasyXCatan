@@ -35,7 +35,7 @@ std::string DevCardTypeToString(DevCardType card) {
  * @param state: 当前游戏状态（引用，用于切换到“建设中”状态）
  * @param lastDiceResult: 上次掷骰子点数，用于显示
  */
-enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>) {
+enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool> opts) {
 
     //  初始化面板
     GameState state = GameState:: IDLE;
@@ -93,8 +93,8 @@ enum ActionType PlayerLoop(Player& player, int lastDiceResult, std::vector<bool>
                 case ButtonTypeFromPanel::TRADE_HARBOR:
                     // 暂时结束当前批量绘图，以免子循环冲突
                     EndBatchDraw();
-                    Music.play(MusicType::HARBOR);
-                    EnterHarborMode(player);
+                    Music.play(MusicType::BANK);
+                    EnterHarborMode(player, opts);
                     Music.play(MusicType::PANEL);
                     BeginBatchDraw();
                     break;

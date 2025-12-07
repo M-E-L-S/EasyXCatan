@@ -175,10 +175,8 @@ void HandleDiceRoll(const MouseEvent &evt){
     if (evt.leftDown) {
         const int d1 = rand() % 6 + 1;
         const int d2 = rand() % 6 + 1;
-        //UI_DiceRowing(d1, d2);
-        //G.diceRoll = d1 + d2;
-        UI_DiceRowing(3,4);
-        G.diceRoll = 7;
+        UI_DiceRowing(d1, d2);
+        G.diceRoll = d1 + d2;
 
         if (G.diceRoll == 7) {
             Resources_Discard();
@@ -364,7 +362,7 @@ void HandleTurnStart(const MouseEvent & evt) {
     UI_DrawHUD();
 
     if (UI_SwitchToPlayerPanel(evt)){
-        auto player = getPlayer(G.currentPlayer - 1);
+        Player& player = getPlayer(G.currentPlayer - 1);
         const auto act = PlayerLoop(player, G.diceRoll, G.map->GetTradeOption(G.currentPlayer));
         switch (act){
             case ActionType::BuildRoad:

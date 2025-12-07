@@ -2,16 +2,19 @@
 #include <graphics.h>
 #include "HarborPanel.h"
 #include "Player.h"
+#include <vector>
 
 // 银行模块的入口函数
 // 传入当前玩家引用，以便修改资源
-inline void EnterHarborMode(Player& currentPlayer) {
+// 新增参数：tradeOptions (7 位)
+// tradeOptions layout: [4:1, 3:1, 木材2:1, 砖块2:1, 矿石2:1, 羊毛2:1, 粮食2:1]
+inline void EnterHarborMode(Player& currentPlayer, const std::vector<bool>& tradeOptions) {
     // 1. 获取当前窗口大小 (适配全屏)
     int w = GetSystemMetrics(SM_CXSCREEN);
     int h = GetSystemMetrics(SM_CYSCREEN);
 
-    // 2. 创建银行实例
-    HarborPanel harbor(w, h);
+    // 2. 创建银行实例（将 tradeOptions 传入）
+    HarborPanel harbor(w, h, tradeOptions);
 
     // 3. 加载资源 (确保 assets 文件夹在 exe 同级目录)
     const char* iconPaths[RESOURCE_COUNT] = {
@@ -27,17 +30,9 @@ inline void EnterHarborMode(Player& currentPlayer) {
     // 请确保 assets/bank_bg.png 存在，否则会显示纯色背景
     harbor.loadBackgroundImage("./assets/harbor_bg.png");
 
-    // ==========================================
-    // 【关键修复 1】设置兜底背景色为白色
-    // ==========================================
     setbkcolor(WHITE);
     cleardevice();
 
-    // ==========================================
-    // 【关键修复 2】显式开启批量绘图
-    // 即使主循环里开过，这里是独立子循环，必须确保双缓冲开启
-    // 防止闪屏，保证按钮和背景同时出现
-    // ==========================================
     BeginBatchDraw();
 
     bool isBankOpen = true;
@@ -85,8 +80,5 @@ inline void EnterHarborMode(Player& currentPlayer) {
         Sleep(16);
     }
 
-    // ==========================================
-    // 【关键修复 3】退出时结束本次批量绘图
-    // ==========================================
     EndBatchDraw();
 }

@@ -37,16 +37,16 @@ inline Player& getPlayer(int playerId) {
     return players[playerId];
 }
 
-int Users_CheckMostKnight() {
-    int max_id=0,max=players[0].getKnightCount();
-    for (int i=1;i<players.size();i++) {
-        int new_=players[i].getKnightCount();
-        if (new_>max_id) {max_id=new_;max=new_;}
+inline int Users_CheckMostKnight() {
+    int max_id=4;
+    for (int i=0;i<players.size();i++) {
+        if (players[i].getHasLargestArmy())
+            max_id=i;
     }
     return max_id;
 }
 
-void Resources_Discard() {
+inline void Resources_Discard() {
     for (int i = 0; i < 4; i++) {
         if(getPlayer(i).getDiscardCount()>0){
             const char* resPaths[RESOURCE_COUNT] = {
@@ -62,7 +62,7 @@ void Resources_Discard() {
     }
 }
 // 补全后的 Resources_Discard（玩家抽资源，完美对接 RobbedResourcePanel）
-void Resources_Discard(int playerId, int victim) {
+inline void Resources_Discard(int playerId, int victim) {
     // 1. 获取玩家实例（你已有 getplayer 函数，无需修改）
     Player& currentPlayer = getPlayer(playerId-1);
     Player& victimPlayer = getPlayer(victim-1);
