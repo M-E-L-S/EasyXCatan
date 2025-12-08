@@ -116,15 +116,23 @@ ActionType DevCardLoop(Player& player1) {
                 // 丰饶年：随机获得 2 种资源 (直接给玩家添加资源)
                 ResourceType res1 = allResources[rand() % NUM_RESOURCES];
                 ResourceType res2 = allResources[rand() % NUM_RESOURCES];
+                ResourceType res3 = allResources[rand() % NUM_RESOURCES];
+                ResourceType res4 = allResources[rand() % NUM_RESOURCES];
+                ResourceType res5 = allResources[rand() % NUM_RESOURCES];
+                ResourceType res6 = allResources[rand() % NUM_RESOURCES];
 
+                player1.addResource(res5, 1);
+                player1.addResource(res6, 1);
                 player1.addResource(res1, 1);
                 player1.addResource(res2, 1);
+                player1.addResource(res3, 1);
+                player1.addResource(res4, 1);
                 break;
             }
             case MONOPOLY: {
                 // 垄断：随机选择一种资源
                 ResourceType chosenType = allResources[rand() % NUM_RESOURCES];
-                player1.addResource(chosenType, 100);
+                player1.addResource(chosenType, 10);
                 //manager.Monopoly(player1.getID(), chosenType, allPlayers);
                 // nextAction 保持 None
                 break;
