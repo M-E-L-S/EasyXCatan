@@ -4,6 +4,9 @@
 
 #include "map.h"
 
+#include <queue>
+#include <stack>
+
 void Map::set_circle(int x, int y,COLORREF color) {
     setfillcolor(color);
     solidcircle(x,y,CR);
@@ -36,7 +39,7 @@ void Map::drawSettlement(int x, int y, int playerId) {
 }
 void Map::drawCity(int x, int y, int playerId) {
 
-    putimage(x-CITYWIDTH/2,y-CITYHEIGHT,&cityImage[playerId-1]);
+    putimage(x-CITYWIDTH/2,y-CITYHEIGHT/2,&cityImage[playerId-1]);
 
 }
 void Map::drawRobber(int x,int y) {
@@ -827,7 +830,7 @@ void Map::drawAllBuildings() {
             if(vertex.buildingType==1){
                 drawSettlement(vertex.x,vertex.y,vertex.owner);
             }else{
-                drawSettlement(vertex.x,vertex.y,vertex.owner);
+                drawCity(vertex.x,vertex.y,vertex.owner);
             }
         }
     }
@@ -957,7 +960,7 @@ bool Map::hasSpecialPortForResource(int playerId, ResourceType resourceType) {
     if (playerId < 1 || playerId > 4) {
         return false;
     }
-    int playerIndex = playerId - 1;
+    int playerIndex = playerId;
     // 将资源类型转换为portType（r1->1, r2->2, ..., r5->5）
     int targetPortType = static_cast<int>(resourceType) + 1;
     // 检查所有边
@@ -983,7 +986,7 @@ bool Map::hasGeneralPort(int playerId) {
     if (playerId < 1 || playerId > 4) {
         return false;
     }
-    int playerIndex = playerId - 1;
+    int playerIndex = playerId;
     for (int edgeIndex = 0; edgeIndex < 72; edgeIndex++) {
         Edge& edge = edges[edgeIndex];
         if (edge.isHarbour == 0) { // 通用港口
@@ -1046,48 +1049,61 @@ void Map::drawRoad(int x,int y,int PlayerID) {
         }
     }
 }
+
 int Map::longRoadOwner() {
-    std::vector<int> playerRoadlengths(4,0);
-    std::vector<bool> visited(54,false);
-    for(int player=0;player<4;player++) {
-        int maxlength=0;
-        for(int start=0;start<54;start++) {
-            if(edges[start].owner==player&&!visited[start]) {
-                int length=dfs(player,start,visited);
-                maxlength=std::max(maxlength,length);
+    for (int playerId = 1; playerId <= 4; playerId++) {
+        int playerLongest = findLongestRoadForPlayer(playerId);
+        if (playerLongest >= 5) {
+            if (playerLongest > longestRoadLength) {
+                longestRoadLength = playerLongest;
+                longestRoadOwner = playerId;
             }
         }
-        playerRoadlengths[player]=maxlength;
     }
-    int maxRoadOwner=-1;
-    int maxRoadLength=0;
-    for(int player=0;player<4;player++) {
-        if(playerRoadlengths[player]>maxRoadLength) {
-            maxRoadLength=playerRoadlengths[player];
-            maxRoadOwner=player;
-        }
-    }
-    if(maxRoadLength>=5) {
-        return maxRoadOwner;
-    }
-    return -1;
+    return longestRoadOwner;
 }
 
-int Map::dfs(int play,int start,std::vector<bool>& visited) {
-    if(play!=edges[start].owner||visited[start]) {
-        return 0;
-    }
-    visited[start]=true;
-    int maxlength=0;
-    std::vector<int> neighbourEdges=getEdgesToEdges(start);
-    for(int n:neighbourEdges) {
-        if(edges[n].owner==play&&!visited[n]) {
-            int length=dfs(play,n,visited);
-            maxlength=std::max(maxlength,length);
+// 使用BFS查找玩家最长连续道路
+int Map::findLongestRoadForPlayer(int playerId) {
+    int maxRoad = 0;
+    std::vector<bool> visited(72, false); // 80条边
+
+    for (int startEdge = 0; startEdge < 72; startEdge++) {
+        if (edges[startEdge].owner == playerId && !visited[startEdge]) {
+            int length = dfsRoadLength(playerId, startEdge, visited);
+            maxRoad = std::max(maxRoad, length);
         }
     }
-    visited[start]=false;
-    return maxlength;
+
+    return maxRoad;
+}
+
+// BFS计算连续道路长度
+int Map::dfsRoadLength(int playerId, int startEdge, std::vector<bool> visited) {
+    std::stack<std::pair<int, int>> q; // <edgeIndex, length>
+    q.push({startEdge, 1});
+    visited[startEdge] = true;
+    int maxLength = 1;
+
+    while (!q.empty()) {
+        auto current = q.top();
+        int currentEdge = current.first;
+        int currentLength = current.second;
+        q.pop();
+
+        maxLength = std::max(maxLength, currentLength);
+        std::vector<int >neighbours=getEdgesToEdges(currentEdge);
+            for (int nextEdge :neighbours) {
+                if (nextEdge != currentEdge &&
+                    !visited[nextEdge] &&
+                    edges[nextEdge].owner == playerId) {
+                    visited[nextEdge] = true;
+                    q.push({nextEdge, currentLength + 1});
+                }
+            }
+    }
+
+    return maxLength;
 }
 
 bool Map::checkButtonClick(int x, int y) {

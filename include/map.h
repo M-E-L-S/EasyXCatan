@@ -29,8 +29,8 @@
 #define PI 3.14159265358979323846
 #define VILLAGEWIDTH 60
 #define VILLAGEHEIGHT  60
-#define CITYWIDTH 180
-#define CITYHEIGHT 180
+#define CITYWIDTH 100
+#define CITYHEIGHT 100
 #define PICTUREWIDTH 205
 #define PICTUREHEIGHT  234
 #define ROBBERWIDTH 150
@@ -102,6 +102,8 @@ struct Edge{
 //地图结构
 class Map{
     int currentvillage;
+    int longestRoadLength = 0;
+    int longestRoadOwner = -1;
        IMAGE bg;
        MapPiece pieces[19];   //构建板块
        Vertex vertices[60];   //储存顶点（用于建设村庄/城市）
@@ -160,7 +162,8 @@ public:
        void drawNumberCircle(int x,int y,int num);   //绘制板块中心的带编号的圆圈  //1
        void drawRobber(int x,int y);    //绘制强盗（沙漠地区）   //1
        void drawRoad(int x,int y,int playId);
-       int dfs(int player,int start,std::vector<bool>& visited);  //1
+    int dfsRoadLength(int playerId, int startEdge, std::vector<bool> visited);
+    int findLongestRoadForPlayer(int playerId);
        int longRoadOwner();  //返回拥有最长道路玩家ID，若无人道路长度大于等于5，返回-1;//1
 
        // 随机数相关

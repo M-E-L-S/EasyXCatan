@@ -1,4 +1,5 @@
 //main.cpp
+//author：徐温洌
 #include <graphics.h>
 #include <conio.h>
 #include <windows.h>
@@ -424,7 +425,7 @@ int main() {
     screenHeight = G.screenHeight;
     screenWidth = G.screenWidth;
     initgraph(G.screenWidth, G.screenHeight);
-    //srand((unsigned int)time(nullptr));
+    srand((unsigned int)time(nullptr));
     MusicManager Music;
     Music.play(MusicType::PANEL);
     BeginBatchDraw();
@@ -439,7 +440,7 @@ int main() {
         loadimage(G.dice + i, path, 100, 100);
     }
 
-    SetupGame(4, 1, bk);
+    SetupGame(4, (unsigned int)time(nullptr), bk);
 
     while (G.gameRunning) {
         BeginBatchDraw();
@@ -532,7 +533,7 @@ void UI_PhaseText(const string& text, int r, int g, int b){
 void UI_ScoreBoard(){
     string scoreText = "得分！";
     int LRS = 0;
-    bool MKS = Users_CheckMostKnight() == G.currentPlayer;
+    bool MKS = Users_CheckMostKnight() == G.currentPlayer - 1;
     if (G.map->longRoadOwner() == G.currentPlayer) LRS = 2;
     int score = Score_CheckVictory(G.currentPlayer - 1, LRS);
 
@@ -721,6 +722,7 @@ bool UI_SwitchToPlayerPanel(const MouseEvent & evt){
 }
 
 void UI_DiceRowing(const int d1, const int d2){
+    //author：刘源
     int currentFrame = 0;
     const int x = (G.screenWidth - 300) / 2;
     const int y = (G.screenHeight - 100) / 2;
@@ -756,11 +758,11 @@ void UI_DiceRowing(const int d1, const int d2){
 }
 
 void smooth_action(int startW, int startH, int duration = 1000) {
+    //author： 刘栋文
     int w = G.screenWidth;
     int h = G.screenHeight;
-    int totalFrames = duration / 8; // 这里的帧数计算可能导致循环次数较少，建议 duration / 16 或直接用时间差
+    int totalFrames = duration / 8;
 
-    // 静态资源加载
     static IMAGE img_bk;
     static IMAGE card;
     static IMAGE vic;
@@ -774,14 +776,12 @@ void smooth_action(int startW, int startH, int duration = 1000) {
     }
 
     IMAGE buffer;
-    buffer.Resize(w, h); // 假设你的库支持这个Resize，如果报错请用 Resize(&buffer, w, h) 或重新 loadimage
+    buffer.Resize(w, h);
 
     for (int frame = 0; frame < totalFrames; frame++) {
-        // 1. 设置绘图目标为缓冲图片
         SetWorkingImage(&buffer);
         cleardevice();
 
-        // 2. 计算缓动参数
         float progress = (float)frame / totalFrames;
         float easeProgress = 1.0f - pow(1.0f - progress, 3); // Cubic Ease Out
         int cur_w = startW + (int)((w - startW) * easeProgress);
@@ -790,7 +790,6 @@ void smooth_action(int startW, int startH, int duration = 1000) {
         int x = (w - cur_w) / 2;
         int y = (h - cur_h) / 2;
 
-        // 3. 绘制背景和卡片
         putimage(0, 0, &img_bk);
         putimage((w - 500) / 2, (h - 500) / 2, &card);
 
@@ -798,15 +797,10 @@ void smooth_action(int startW, int startH, int duration = 1000) {
         loadimage(&scaledImg, "resources/image/victory.jpg", cur_w, cur_h);
         putimage(x, y, &scaledImg);
 
-        // 5. 切换回屏幕并显示缓冲内容
         SetWorkingImage(NULL);
         putimage(0, 0, &buffer);
 
         FlushBatchDraw();
-
-        // 你的代码里 Sleep(30) 会导致动画偏慢，
-        // 1000ms / 30ms ≈ 33帧，但你计算的 totalFrames = 1000/8 = 125帧
-        // 125 * 30ms = 3.75秒，动画会比预期的1秒慢很多。建议改为 Sleep(10)
         Sleep(10);
     }
 
