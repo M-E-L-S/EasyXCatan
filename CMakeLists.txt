@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable(EasyX_Project src/main.cpp
+add_executable(EasyX_Project WIN32
+        resources/app.rc
+        src/main.cpp
         src/map.cpp
         src/BankPanel.cpp
         src/DevCardManager.cpp

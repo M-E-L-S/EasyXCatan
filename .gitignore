@@ -64,3 +64,4 @@ compile_commands.json
 *.user
 *.code-workspace
 *.idea_modules/
+/dist/
